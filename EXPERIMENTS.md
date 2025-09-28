@@ -54,7 +54,7 @@ This repository implements the **QHR-V2X (Quantum-Heuristic Routing for V2X)** f
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/[your-username]/QHR-V2X.git
+git clone git@github.com:riotu-lab/QHR-V2X.git
 cd QHR-V2X
 ```
 
