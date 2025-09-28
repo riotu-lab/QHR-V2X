@@ -24,14 +24,14 @@ In this study, we introduce Quantum-Heuristic Routing for V2X (QHR-V2X), a novel
 - **Paper Title**: QHR-V2X: A Quantum-Heuristic Routing Framework for Efficient V2X Path Discovery
 - **Authors**: Zahid Khan, Sultan Almogbil, Muhammad Babar, Adel Ammar, Wadii Boulila
 - **Institution**: Prince Sultan University, RIOTU Laboratory
-- **Repository**: https://github.com/[your-username]/QHR-V2X
+- **Repository**: https://github.com/riotu-lab/QHR-V2X
 - **License**: MIT License (see LICENSE file)
 
 ## Contact
 
 For questions about this implementation or the research, please contact:
-- Zahid Khan: [email]
-- Sultan Almogbil: [email]
+- Zahid Khan: zskhan@psu.edu.sa
+- Sultan Almogbil: salmogbil@psu.edu.sa
 
 ## Acknowledgments
 
