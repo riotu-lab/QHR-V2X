@@ -25,7 +25,7 @@ This document provides guidance for integrating this codebase with your research
 
 ### For Abstract/Introduction
 
-> "To ensure reproducibility and facilitate future research, we provide a complete open-source implementation of QHR-V2X along with all experimental data and analysis scripts. The implementation is available at: https://github.com/[your-username]/QHR-V2X"
+> "To ensure reproducibility and facilitate future research, we provide a complete open-source implementation of QHR-V2X along with all experimental data and analysis scripts. The implementation is available at: https://github.com/riotu-lab/QHR-V2X"
 
 ### For Methodology Section
 
@@ -36,7 +36,7 @@ This document provides guidance for integrating this codebase with your research
 > "All experimental results can be reproduced using the provided scripts. To run the complete experiment suite:
 
 ```bash
-git clone https://github.com/[your-username]/QHR-V2X.git
+git clone git@github.com:riotu-lab/QHR-V2X.git
 cd QHR-V2X
 poetry install
 python experiments/scripts/reproduce_paper_results.py
@@ -114,7 +114,7 @@ The analysis script generates these publication-ready figures:
 
 ```bash
 # 1. Clone and setup
-git clone https://github.com/[your-username]/QHR-V2X.git
+git clone git@github.com:riotu-lab/QHR-V2X.git
 cd QHR-V2X
 poetry install
 
