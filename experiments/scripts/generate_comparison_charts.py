@@ -729,7 +729,12 @@ def plot_solvability(out_dir: Path, trials: int = 60) -> Path:
 def plot_equation12_check(
     rows: List[dict], mode: str, eta: float, out_dir: Path
 ) -> Path | None:
-    """Chart the ratio N'e / Ne that Eq. 12 predicts should equal (1 - eta)."""
+    """Chart the ratio N'e / Ne that Eq. 12 predicts should equal (1 - eta).
+
+    This is also where the sampling reading of Eq. 11 appears, if it was measured.
+    It is not a proposed method, so it is kept out of the main figures; it belongs
+    here because it is the answer to "was the stochastic reading tried?".
+    """
     stats = aggregate(rows, "expansions")
     if "A*" not in stats or "QHR-V2X" not in stats:
         return None
@@ -757,7 +762,7 @@ def plot_equation12_check(
             linestyle=":",
             linewidth=1.8,
             markersize=6,
-            label="Measured $N'_e / N_e$ (stochastic selection)",
+            label="Measured $N'_e / N_e$, sampling instead of argmax",
         )
 
     ax.axhline(
@@ -778,12 +783,13 @@ def plot_equation12_check(
     fig.text(
         0.01,
         0.01,
-        "Argmax selection over Eqs. (9)-(11) reproduces A* exactly, so the ratio is 1.00 "
-        "regardless of eta.",
+        "Argmax selection over Eqs. (9)-(11) reproduces A* exactly, so the ratio is 1.00 for every "
+        "eta, T and candidate-set size.\nSampling instead of taking the argmax is the only reading "
+        "that departs from A*, and it costs expansions rather than saving them.",
         fontsize=7,
         color="#555555",
     )
-    fig.tight_layout(rect=(0, 0.035, 1, 1))
+    fig.tight_layout(rect=(0, 0.055, 1, 1))
 
     path = out_dir / f"Fig_Eq12_check_{mode}.png"
     fig.savefig(path, dpi=300, bbox_inches="tight")
@@ -850,7 +856,13 @@ def main() -> int:
     parser.add_argument("--eta", type=float, default=0.3, help="amplification coefficient eta in Eq. 10 (default: 0.3)")
     parser.add_argument("--temperature", type=float, default=1.0, help="control parameter T in Eq. 9 (default: 1.0)")
     parser.add_argument("--candidate-size", type=int, default=8, help="size of candidate set C (default: 8)")
-    parser.add_argument("--include-stochastic", action="store_true", help="also chart the sampling variant of Eq. 11")
+    parser.add_argument(
+        "--include-stochastic",
+        action="store_true",
+        help="also measure the sampling reading of Eq. 11; it appears only in the Eq. 12 diagnostic, "
+        "never in the main RDT/RDM/PL/Ne figures, which always show exactly the paper's three "
+        "algorithms",
+    )
     parser.add_argument(
         "--include-repo-impl",
         action="store_true",
@@ -881,13 +893,16 @@ def main() -> int:
         "A*": astar,
         "QHR-V2X": make_qhr_v2x(args.candidate_size, args.temperature, args.eta),
     }
+
+    # The main figures always show exactly the three algorithms the paper compares.
+    # The sampling reading of Eq. 11 is not a proposed method -- it exists only to
+    # answer "did you try sampling?" -- so it is confined to the Eq. 12 diagnostic.
     series = ["Dijkstra", "A*", "QHR-V2X"]
 
     if args.include_stochastic:
         algorithms["QHR-V2X (sampled)"] = make_qhr_v2x(
             args.candidate_size, args.temperature, args.eta, stochastic=True, seed=99
         )
-        series.append("QHR-V2X (sampled)")
 
     repo_impl = None
     if args.include_repo_impl:
@@ -997,6 +1012,13 @@ def main() -> int:
         "once the grid is large (see `figures/Fig_solvability_vs_density.png`). Endpoints are "
         "therefore drawn from the largest connected free component as an approximate-diameter "
         "pair, which keeps every instance solvable without silently lowering the density.\n\n"
+        "## Which series appear where\n\n"
+        "The main figures (RDT, RDM, PL, Ne and the summary panels) show exactly the three "
+        "algorithms the paper compares: Dijkstra, A* and QHR-V2X.\n\n"
+        "`QHR-V2X (sampled)` is not a proposed method. It is the alternative reading of Eq. 11 -- "
+        "sampling from the amplified distribution rather than taking its argmax -- and it exists "
+        "only to answer whether that reading was tried. It appears in the tables below and in "
+        "`figures/Fig_Eq12_check_*.png`, and nowhere else.\n\n"
         "## Results\n\n" + "\n\n".join(report) + "\n\n"
         "## Figures\n\n" + figure_index + "\n\n"
         "## Reproduce\n\n```bash\n" + invocation + "\n```\n"

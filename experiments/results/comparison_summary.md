@@ -15,16 +15,22 @@ All algorithms are measured through one shared search skeleton, so every metric 
 
 Obstacles are uniform random at the nominal density, i.e. `round(size * size * density)` blocked cells. Corner-to-corner queries are not usable at the 40% dense setting: the resulting free-cell fraction of 0.60 sits just above the 2D site-percolation threshold p_c ~ 0.5927, so opposite corners are rarely connected once the grid is large (see `figures/Fig_solvability_vs_density.png`). Endpoints are therefore drawn from the largest connected free component as an approximate-diameter pair, which keeps every instance solvable without silently lowering the density.
 
+## Which series appear where
+
+The main figures (RDT, RDM, PL, Ne and the summary panels) show exactly the three algorithms the paper compares: Dijkstra, A* and QHR-V2X.
+
+`QHR-V2X (sampled)` is not a proposed method. It is the alternative reading of Eq. 11 -- sampling from the amplified distribution rather than taking its argmax -- and it exists only to answer whether that reading was tried. It appears in the tables below and in `figures/Fig_Eq12_check_*.png`, and nowhere else.
+
 ## Results
 
 ### Sparse topology (20% obstacles)
 
 | Algorithm            |   RDT (ms) |        RDM |  PL (hops) |         Ne |  Optimal |
 |----------------------|------------|------------|------------|------------|----------|
-| A*                   |      0.253 |      498.0 |      58.14 |      194.8 | 100/100    |
-| Dijkstra             |      0.744 |     1751.5 |      58.14 |      876.2 | 100/100    |
-| QHR-V2X              |      3.092 |      498.0 |      58.14 |      194.8 | 100/100    |
-| QHR-V2X (sampled)    |      7.180 |      765.6 |      58.14 |      329.7 | 100/100    |
+| A*                   |      0.254 |      498.0 |      58.14 |      194.8 | 100/100    |
+| Dijkstra             |      0.749 |     1751.5 |      58.14 |      876.2 | 100/100    |
+| QHR-V2X              |      2.921 |      498.0 |      58.14 |      194.8 | 100/100    |
+| QHR-V2X (sampled)    |      6.521 |      765.6 |      58.14 |      329.7 | 100/100    |
 
 Eq. 12 predicts N'e/Ne = 0.70; measured 1.0000-1.0000 across grid sizes.
 
@@ -33,10 +39,10 @@ Eq. 12 predicts N'e/Ne = 0.70; measured 1.0000-1.0000 across grid sizes.
 
 | Algorithm            |   RDT (ms) |        RDM |  PL (hops) |         Ne |  Optimal |
 |----------------------|------------|------------|------------|------------|----------|
-| A*                   |      1.096 |     2064.6 |     129.93 |     1003.9 | 100/100    |
-| Dijkstra             |      1.102 |     2558.6 |     129.93 |     1279.7 | 100/100    |
-| QHR-V2X              |     14.574 |     2064.6 |     129.93 |     1003.9 | 100/100    |
-| QHR-V2X (sampled)    |     21.381 |     2085.7 |     129.99 |     1020.6 | 97/100    |
+| A*                   |      1.098 |     2064.6 |     129.93 |     1003.9 | 100/100    |
+| Dijkstra             |      1.106 |     2558.6 |     129.93 |     1279.7 | 100/100    |
+| QHR-V2X              |     13.786 |     2064.6 |     129.93 |     1003.9 | 100/100    |
+| QHR-V2X (sampled)    |     19.731 |     2085.7 |     129.99 |     1020.6 | 97/100    |
 
 Eq. 12 predicts N'e/Ne = 0.70; measured 1.0000-1.0000 across grid sizes.
 
