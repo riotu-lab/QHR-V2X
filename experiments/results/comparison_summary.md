@@ -27,9 +27,9 @@ Re-run with `--include-stochastic` to additionally measure the sampling reading 
 
 | Algorithm            |   RDT (ms) |        RDM |  PL (hops) |         Ne |  Optimal |
 |----------------------|------------|------------|------------|------------|----------|
-| A*                   |      0.253 |      498.0 |      58.14 |      194.8 | 100/100    |
-| Dijkstra             |      0.748 |     1751.5 |      58.14 |      876.2 | 100/100    |
-| QHR-V2X              |      2.920 |      498.0 |      58.14 |      194.8 | 100/100    |
+| A*                   |      0.252 |      498.0 |      58.14 |      194.8 | 100/100    |
+| Dijkstra             |      0.744 |     1751.5 |      58.14 |      876.2 | 100/100    |
+| QHR-V2X              |      2.938 |      498.0 |      58.14 |      194.8 | 100/100    |
 
 Eq. 12 predicts N'e/Ne = 0.70; measured 1.0000-1.0000 across grid sizes.
 
@@ -38,9 +38,9 @@ Eq. 12 predicts N'e/Ne = 0.70; measured 1.0000-1.0000 across grid sizes.
 
 | Algorithm            |   RDT (ms) |        RDM |  PL (hops) |         Ne |  Optimal |
 |----------------------|------------|------------|------------|------------|----------|
-| A*                   |      1.087 |     2064.6 |     129.93 |     1003.9 | 100/100    |
-| Dijkstra             |      1.095 |     2558.6 |     129.93 |     1279.7 | 100/100    |
-| QHR-V2X              |     13.660 |     2064.6 |     129.93 |     1003.9 | 100/100    |
+| A*                   |      1.085 |     2064.6 |     129.93 |     1003.9 | 100/100    |
+| Dijkstra             |      1.093 |     2558.6 |     129.93 |     1279.7 | 100/100    |
+| QHR-V2X              |     13.604 |     2064.6 |     129.93 |     1003.9 | 100/100    |
 
 Eq. 12 predicts N'e/Ne = 0.70; measured 1.0000-1.0000 across grid sizes.
 
@@ -53,20 +53,20 @@ Eq. 12 predicts N'e/Ne = 0.70; measured 1.0000-1.0000 across grid sizes.
 - `figures/Fig_PL_sparse.png`
 - `figures/Fig_Ne_sparse.png`
 - `figures/Fig_RDM_sparse_log.png`
+- `figures/Fig_RDT_paper_formula_sparse.png`
 - `figures/Fig_summary_sparse.png`
 - `figures/Fig_Eq12_check_sparse.png`
-- `figures/Fig_implementation_cost_sparse.png`
 - `figures/Fig_RDT_dense.png`
 - `figures/Fig_RDM_dense.png`
 - `figures/Fig_PL_dense.png`
 - `figures/Fig_Ne_dense.png`
 - `figures/Fig_RDM_dense_log.png`
+- `figures/Fig_RDT_paper_formula_dense.png`
 - `figures/Fig_summary_dense.png`
 - `figures/Fig_Eq12_check_dense.png`
-- `figures/Fig_implementation_cost_dense.png`
 
 ## Reproduce
 
 ```bash
-python experiments/scripts/generate_comparison_charts.py --seeds 20 --repeats 3 --eta 0.3 --temperature 1.0 --candidate-size 8 --include-repo-impl --repo-seeds 5
+python experiments/scripts/generate_comparison_charts.py --seeds 20 --repeats 3 --eta 0.3 --temperature 1.0 --candidate-size 8
 ```

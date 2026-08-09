@@ -392,6 +392,17 @@ def coincident_series(
     return pairs
 
 
+def underlaid_series(
+    stats: Dict[str, Dict[int, Tuple[float, float]]], series: Sequence[str]
+) -> set[str]:
+    """Series that a later-drawn curve will completely cover.
+
+    Drawing these wider leaves a visible halo around the covering curve, so an
+    exact overlap reads as an overlap rather than as a missing line.
+    """
+    return {first for first, _ in coincident_series(stats, series)}
+
+
 def measure(
     algorithms: Dict[str, Callable[[np.ndarray, Coord, Coord], SearchResult]],
     mode: str,
@@ -505,6 +516,8 @@ def plot_metric(
     stats = aggregate(rows, metric)
     density = MODES[mode]["density"]
 
+    hidden = underlaid_series(stats, series)
+
     fig, ax = plt.subplots(figsize=(7.0, 4.6), dpi=150)
     for name in series:
         if name not in stats:
@@ -512,16 +525,17 @@ def plot_metric(
         sizes = sorted(stats[name])
         means = [stats[name][s][0] for s in sizes]
         errs = [stats[name][s][1] for s in sizes]
-        style = STYLE.get(name, {})
+        covered = name in hidden
         ax.errorbar(
             sizes,
             means,
             yerr=errs,
             label=name,
             capsize=3,
-            linewidth=1.8,
-            markersize=6,
-            **style,
+            linewidth=6.0 if covered else 1.8,
+            markersize=12 if covered else 6,
+            alpha=0.45 if covered else 1.0,
+            **STYLE.get(name, {}),
         )
 
     if logy:
@@ -558,20 +572,23 @@ def plot_summary(
 
     for ax, (metric, ylabel, _short, description) in zip(axes.ravel(), METRICS):
         stats = aggregate(rows, metric)
+        hidden = underlaid_series(stats, series)
         for name in series:
             if name not in stats:
                 continue
             sizes = sorted(stats[name])
             means = [stats[name][s][0] for s in sizes]
             errs = [stats[name][s][1] for s in sizes]
+            covered = name in hidden
             ax.errorbar(
                 sizes,
                 means,
                 yerr=errs,
                 label=name,
                 capsize=3,
-                linewidth=1.8,
-                markersize=6,
+                linewidth=5.0 if covered else 1.8,
+                markersize=11 if covered else 6,
+                alpha=0.45 if covered else 1.0,
                 **STYLE.get(name, {}),
             )
         _apply_axes_style(ax, "Grid size (cells per side)", ylabel, description)
@@ -666,6 +683,76 @@ def plot_implementation_cost(
     fig.tight_layout(rect=(0, 0.07, 1, 1))
 
     path = out_dir / f"Fig_implementation_cost_{mode}.png"
+    fig.savefig(path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    return path
+
+
+# The constant the paper's harness uses to turn a message count into a
+# "time": tests/test_pathfinding_all.py sets time_complexity_factor = 0.001.
+PAPER_TIME_FACTOR = 0.001
+
+# Colours and markers matching Figs. 3 and 6 of the paper, so the regenerated
+# version can be laid beside the published one.
+PAPER_STYLE = {
+    "A*": {"color": "#1f6fb4", "marker": "o"},
+    "QHR-V2X": {"color": "#d62728", "marker": "s"},
+    "Dijkstra": {"color": "#2ca02c", "marker": "^"},
+}
+
+
+def plot_paper_formula_rdt(
+    rows: List[dict], mode: str, seeds: int, out_dir: Path
+) -> Path:
+    """Rebuild the paper's RDT figure using the paper's own definition of RDT.
+
+    Figs. 3 and 6 plot `estimated_ms = avg_msgs * 0.001` rather than a measured
+    duration. This reproduces that construction exactly -- same formula, same
+    axes, same series styling -- but feeds it message counts that are defined
+    identically for all three algorithms. It is the like-for-like replacement
+    for the published figure, so the two can be compared directly.
+    """
+    stats = aggregate(rows, "messages")
+    density = MODES[mode]["density"]
+    series = ["A*", "QHR-V2X", "Dijkstra"]  # paper's legend order
+
+    hidden = underlaid_series(stats, series)
+
+    fig, ax = plt.subplots(figsize=(7.0, 4.6), dpi=150)
+    for name in series:
+        if name not in stats:
+            continue
+        sizes = sorted(stats[name])
+        covered = name in hidden
+        ax.plot(
+            sizes,
+            [stats[name][s][0] * PAPER_TIME_FACTOR for s in sizes],
+            label=name,
+            linewidth=6.0 if covered else 1.8,
+            markersize=13 if covered else 7,
+            alpha=0.45 if covered else 1.0,
+            **PAPER_STYLE[name],
+        )
+
+    _apply_axes_style(
+        ax,
+        "Grid Size",
+        "Estimated Time (ms)",
+        f"Estimated Route Discovery Time (RDT) under {density:.0%} obstacle density",
+    )
+
+    caption = (
+        f"Rebuilt with the paper's own definition, estimated_ms = mean RDM x {PAPER_TIME_FACTOR}, "
+        f"over {seeds} seeds per grid size.\nThe difference from the published figure is the "
+        "message counter: here all three algorithms are counted identically."
+    )
+    for first, second in coincident_series(stats, series):
+        caption += f"\n{first} and {second} coincide exactly, so one curve hides the other."
+
+    fig.text(0.01, 0.01, caption, fontsize=7, color="#555555")
+    fig.tight_layout(rect=(0, 0.035 * (1 + caption.count("\n")), 1, 1))
+
+    path = out_dir / f"Fig_RDT_paper_formula_{mode}.png"
     fig.savefig(path, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return path
@@ -954,6 +1041,7 @@ def main() -> int:
                 logy=True,
             )
         )
+        written.append(plot_paper_formula_rdt(rows, mode, args.seeds, out_dir))
         written.append(plot_summary(rows, mode, args.seeds, out_dir, series))
 
         eq12 = plot_equation12_check(rows, mode, args.eta, out_dir)
