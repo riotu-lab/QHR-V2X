@@ -741,6 +741,7 @@ def plot_equation12_check(
 
     sizes = sorted(stats["A*"])
     ratios = [stats["QHR-V2X"][s][0] / stats["A*"][s][0] for s in sizes]
+    has_sampled = "QHR-V2X (sampled)" in stats
 
     fig, ax = plt.subplots(figsize=(7.0, 4.6), dpi=150)
     ax.plot(
@@ -752,7 +753,7 @@ def plot_equation12_check(
         markersize=6,
         label="Measured $N'_e / N_e$",
     )
-    if "QHR-V2X (sampled)" in stats:
+    if has_sampled:
         sampled = [stats["QHR-V2X (sampled)"][s][0] / stats["A*"][s][0] for s in sizes]
         ax.plot(
             sizes,
@@ -780,16 +781,17 @@ def plot_equation12_check(
         "Expansion ratio $N'_e / N_e$ (dimensionless)",
         f"Eq. 12 check under {MODES[mode]['density']:.0%} obstacle density",
     )
-    fig.text(
-        0.01,
-        0.01,
+    caption = (
         "Argmax selection over Eqs. (9)-(11) reproduces A* exactly, so the ratio is 1.00 for every "
-        "eta, T and candidate-set size.\nSampling instead of taking the argmax is the only reading "
-        "that departs from A*, and it costs expansions rather than saving them.",
-        fontsize=7,
-        color="#555555",
+        "eta, T and candidate-set size."
     )
-    fig.tight_layout(rect=(0, 0.055, 1, 1))
+    if has_sampled:
+        caption += (
+            "\nSampling instead of taking the argmax is the only reading that departs from A*, "
+            "and it costs expansions rather than saving them."
+        )
+    fig.text(0.01, 0.01, caption, fontsize=7, color="#555555")
+    fig.tight_layout(rect=(0, 0.035 * (1 + caption.count("\n")), 1, 1))
 
     path = out_dir / f"Fig_Eq12_check_{mode}.png"
     fig.savefig(path, dpi=300, bbox_inches="tight")
@@ -1013,13 +1015,19 @@ def main() -> int:
         "therefore drawn from the largest connected free component as an approximate-diameter "
         "pair, which keeps every instance solvable without silently lowering the density.\n\n"
         "## Which series appear where\n\n"
-        "The main figures (RDT, RDM, PL, Ne and the summary panels) show exactly the three "
-        "algorithms the paper compares: Dijkstra, A* and QHR-V2X.\n\n"
-        "`QHR-V2X (sampled)` is not a proposed method. It is the alternative reading of Eq. 11 -- "
-        "sampling from the amplified distribution rather than taking its argmax -- and it exists "
-        "only to answer whether that reading was tried. It appears in the tables below and in "
-        "`figures/Fig_Eq12_check_*.png`, and nowhere else.\n\n"
-        "## Results\n\n" + "\n\n".join(report) + "\n\n"
+        "Every figure shows exactly the three algorithms the paper compares: Dijkstra, A* and "
+        "QHR-V2X. QHR-V2X uses argmax selection over Eqs. (9)-(11), as Algorithm 1 step 4 "
+        "specifies.\n\n"
+        + (
+            "`QHR-V2X (sampled)` is the alternative reading of Eq. 11 -- sampling from the "
+            "amplified distribution rather than taking its argmax. It is not a proposed method "
+            "and exists only to record that the reading was tried, so it is confined to the "
+            "tables below and to `figures/Fig_Eq12_check_*.png`.\n\n"
+            if args.include_stochastic
+            else "Re-run with `--include-stochastic` to additionally measure the sampling reading "
+            "of Eq. 11; it is excluded here.\n\n"
+        )
+        + "## Results\n\n" + "\n\n".join(report) + "\n\n"
         "## Figures\n\n" + figure_index + "\n\n"
         "## Reproduce\n\n```bash\n" + invocation + "\n```\n"
     )
