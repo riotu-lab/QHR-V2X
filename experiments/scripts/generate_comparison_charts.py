@@ -457,6 +457,10 @@ def measure(
                         # RDT as Section IV defines it: the message count scaled by
                         # the harness's time_complexity_factor.
                         "rdt_ms": messages * TIME_COMPLEXITY_FACTOR,
+                        # Protocol-level alternative: count only the transmissions
+                        # along the discovered route, as a forwarding scheme that
+                        # never floods would. One RREQ per hop.
+                        "route_messages": hops,
                         "wall_ms": best_ms,
                         "optimal_hops": optimal_hops,
                     }
@@ -772,6 +776,88 @@ def plot_implementation_cost(
     return path
 
 
+def plot_rdm_model(rows: List[dict], mode: str, seeds: int, out_dir: Path) -> Path:
+    """Show which counting convention reproduces the published RDT curve.
+
+    Two conventions are defensible for a route-discovery protocol:
+
+    search level     one message per node examined, i.e. the algorithm floods
+                     the region it searches.
+    route level      one message per hop of the discovered route, i.e. the
+                     algorithm computes locally and only forwards along the
+                     answer.
+
+    Either is fine applied consistently, and each gives all three algorithms a
+    similar shape. The published figure is reproduced only by pairing the
+    search-level count for A* and Dijkstra with the route-level count for
+    QHR-V2X, which is what the right-hand panel isolates.
+    """
+    density = MODES[mode]["density"]
+    search = aggregate(rows, "messages")
+    route = aggregate(rows, "route_messages")
+    sizes = sorted(search["A*"])
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.8), dpi=150)
+
+    def draw(ax, source: Dict[str, Dict[str, Dict[int, Tuple[float, float]]]], title: str) -> None:
+        curves = {
+            name: [source[name][0][name][s][0] for s in sizes]
+            for name in PAPER_SERIES
+            if name in source[name][0]
+        }
+        for name, values in curves.items():
+            covered = any(
+                other != name
+                and PAPER_SERIES.index(other) > PAPER_SERIES.index(name)
+                and all(math.isclose(a, b, rel_tol=1e-12) for a, b in zip(values, other_values))
+                for other, other_values in curves.items()
+            )
+            stats, suffix = source[name]
+            ax.plot(
+                sizes,
+                [v * TIME_COMPLEXITY_FACTOR for v in values],
+                label=f"{name}{suffix}",
+                linewidth=6.0 if covered else 1.8,
+                markersize=13 if covered else 7,
+                alpha=0.45 if covered else 1.0,
+                **PAPER_STYLE[name],
+            )
+        _apply_axes_style(ax, "Grid Size", "Estimated Time (ms)", title)
+        ax.set_ylim(bottom=0)
+
+    consistent = {name: (search, "") for name in PAPER_SERIES}
+    draw(axes[0], consistent, "Counted consistently: every algorithm at search level")
+
+    mixed = {
+        "A*": (search, " (search level)"),
+        "Dijkstra": (search, " (search level)"),
+        "QHR-V2X": (route, " (route level)"),
+    }
+    draw(axes[1], mixed, "Counted inconsistently: QHR-V2X at route level")
+
+    axes[0].set_ylim(axes[1].get_ylim())
+
+    fig.suptitle(
+        f"What produces the published RDT curve -- {density:.0%} obstacle density", fontsize=12
+    )
+    fig.text(
+        0.01,
+        0.01,
+        f"Mean of {seeds} seeds per grid size, both panels using estimated_ms = messages x "
+        f"{TIME_COMPLEXITY_FACTOR}.\nLeft: counted the same way, QHR-V2X lies on A*. Right: only "
+        "QHR-V2X is counted along its route, and it drops to the axis. The published figure has "
+        "the right-hand shape.",
+        fontsize=7,
+        color="#555555",
+    )
+    fig.tight_layout(rect=(0, 0.06, 1, 0.94))
+
+    path = out_dir / f"Supp_rdm_model_{mode}.png"
+    fig.savefig(path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    return path
+
+
 def plot_solvability(out_dir: Path, trials: int = 60) -> Path:
     """Chart how often a uniform-random grid admits a corner-to-corner route.
 
@@ -911,6 +997,7 @@ def write_csv(rows: List[dict], path: Path) -> None:
         "messages",
         "path_len",
         "rdt_ms",
+        "route_messages",
         "wall_ms",
         "optimal_hops",
     ]
@@ -1071,6 +1158,7 @@ def main() -> int:
                 series,
             )
         )
+        written.append(plot_rdm_model(rows, mode, args.seeds, out_dir))
         written.append(plot_summary(rows, mode, args.seeds, out_dir, series))
 
         eq12 = plot_equation12_check(rows, mode, args.eta, out_dir)

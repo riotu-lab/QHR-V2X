@@ -27,9 +27,9 @@ Re-run with `--include-stochastic` to additionally measure the sampling reading 
 
 | Algorithm            |   RDT (ms) |        RDM |  PL (hops) |         Ne | Measured (ms) |  Optimal |
 |----------------------|------------|------------|------------|------------|---------------|----------|
-| A*                   |     0.4980 |      498.0 |      58.14 |      194.8 |         0.252 | 100/100    |
-| Dijkstra             |     1.7515 |     1751.5 |      58.14 |      876.2 |         0.746 | 100/100    |
-| QHR-V2X              |     0.4980 |      498.0 |      58.14 |      194.8 |         2.917 | 100/100    |
+| A*                   |     0.4980 |      498.0 |      58.14 |      194.8 |         0.250 | 100/100    |
+| Dijkstra             |     1.7515 |     1751.5 |      58.14 |      876.2 |         0.744 | 100/100    |
+| QHR-V2X              |     0.4980 |      498.0 |      58.14 |      194.8 |         2.912 | 100/100    |
 
 Eq. 12 predicts N'e/Ne = 0.70; measured 1.0000-1.0000 across grid sizes.
 
@@ -38,9 +38,9 @@ Eq. 12 predicts N'e/Ne = 0.70; measured 1.0000-1.0000 across grid sizes.
 
 | Algorithm            |   RDT (ms) |        RDM |  PL (hops) |         Ne | Measured (ms) |  Optimal |
 |----------------------|------------|------------|------------|------------|---------------|----------|
-| A*                   |     2.0646 |     2064.6 |     129.93 |     1003.9 |         1.088 | 100/100    |
-| Dijkstra             |     2.5586 |     2558.6 |     129.93 |     1279.7 |         1.098 | 100/100    |
-| QHR-V2X              |     2.0646 |     2064.6 |     129.93 |     1003.9 |        13.570 | 100/100    |
+| A*                   |     2.0646 |     2064.6 |     129.93 |     1003.9 |         1.086 | 100/100    |
+| Dijkstra             |     2.5586 |     2558.6 |     129.93 |     1279.7 |         1.096 | 100/100    |
+| QHR-V2X              |     2.0646 |     2064.6 |     129.93 |     1003.9 |        13.518 | 100/100    |
 
 Eq. 12 predicts N'e/Ne = 0.70; measured 1.0000-1.0000 across grid sizes.
 
@@ -53,6 +53,7 @@ Eq. 12 predicts N'e/Ne = 0.70; measured 1.0000-1.0000 across grid sizes.
 - `figures/Fig8_sparse.png`
 - `figures/Supp_measured_time_sparse.png`
 - `figures/Supp_expansions_sparse.png`
+- `figures/Supp_rdm_model_sparse.png`
 - `figures/Supp_summary_sparse.png`
 - `figures/Supp_Eq12_check_sparse.png`
 - `figures/Fig3_dense.png`
@@ -60,6 +61,7 @@ Eq. 12 predicts N'e/Ne = 0.70; measured 1.0000-1.0000 across grid sizes.
 - `figures/Fig5_dense.png`
 - `figures/Supp_measured_time_dense.png`
 - `figures/Supp_expansions_dense.png`
+- `figures/Supp_rdm_model_dense.png`
 - `figures/Supp_summary_dense.png`
 - `figures/Supp_Eq12_check_dense.png`
 
