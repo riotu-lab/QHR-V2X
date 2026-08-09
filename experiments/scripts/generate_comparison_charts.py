@@ -31,7 +31,8 @@ messages    RDM. One control message per node selection, plus one per accepted
             edge relaxation -- i.e. one RREQ per hop explored and one update per
             improved cost estimate.
 path_len    PL, in hops.
-time_ms     RDT, measured wall-clock time for the search call.
+rdt_ms      RDT, as Section IV defines it: messages x time_complexity_factor.
+wall_ms     Measured wall-clock time for the search call, reported alongside.
 
 Usage
 -----
@@ -358,6 +359,10 @@ MODES = {
     "dense": {"density": 0.40, "sizes": [10, 25, 50, 75, 100]},
 }
 
+# Section IV converts a message count into an estimated Route Discovery Time.
+# tests/test_pathfinding_all.py names this time_complexity_factor.
+TIME_COMPLEXITY_FACTOR = 0.001
+
 # Plot order and styling. Keys must match the algorithm dict built in main().
 STYLE = {
     "Dijkstra": {"color": "#c0392b", "marker": "s", "linestyle": "-"},
@@ -449,7 +454,10 @@ def measure(
                         "expansions": expansions,
                         "messages": messages,
                         "path_len": hops,
-                        "time_ms": best_ms,
+                        # RDT as Section IV defines it: the message count scaled by
+                        # the harness's time_complexity_factor.
+                        "rdt_ms": messages * TIME_COMPLEXITY_FACTOR,
+                        "wall_ms": best_ms,
                         "optimal_hops": optimal_hops,
                     }
                 )
@@ -485,11 +493,39 @@ def aggregate(rows: List[dict], metric: str) -> Dict[str, Dict[int, Tuple[float,
 # --------------------------------------------------------------------------
 
 METRICS = [
-    ("time_ms", "Route Discovery Time (ms)", "RDT", "Measured wall-clock search time"),
-    ("messages", "Route Discovery Messages", "RDM", "Control messages (selections + updates)"),
-    ("path_len", "Path Length (hops)", "PL", "Discovered path length"),
+    ("rdt_ms", "Estimated Time (ms)", "RDT", "Route Discovery Time"),
+    ("messages", "Messages (RDM)", "RDM", "Route Discovery Messages"),
+    ("path_len", "Path Length (hops)", "PL", "Path Length"),
     ("expansions", "Node Expansions $N_e$", "Ne", "Distinct nodes finalised"),
 ]
+
+# Which paper figure each (mode, metric) pair corresponds to. Section IV plots
+# RDT, RDM and PL at each of the two obstacle densities.
+PAPER_FIGURES = {
+    ("dense", "rdt_ms"): (3, "Estimated Route Discovery Time (RDT) under 40% obstacle density"),
+    ("dense", "messages"): (4, "Route Discovery Messages (RDM) under 40% obstacle density"),
+    ("dense", "path_len"): (5, "Path Length (PL) under 40% obstacle density"),
+    ("sparse", "rdt_ms"): (
+        6,
+        "Estimated Route Discovery Time (RDT) under sparse topology\nwith 20% obstacle density",
+    ),
+    ("sparse", "messages"): (
+        7,
+        "Route Discovery Messages (RDM) under sparse topology\nwith 20% obstacle density",
+    ),
+    ("sparse", "path_len"): (
+        8,
+        "Path Length (PL) under sparse topology with 20% obstacle density",
+    ),
+}
+
+# Series order, colours and markers as they appear in the paper's figures.
+PAPER_SERIES = ["A*", "QHR-V2X", "Dijkstra"]
+PAPER_STYLE = {
+    "A*": {"color": "#1f6fb4", "marker": "o"},
+    "QHR-V2X": {"color": "#d62728", "marker": "s"},
+    "Dijkstra": {"color": "#2ca02c", "marker": "^"},
+}
 
 
 def _apply_axes_style(ax, xlabel: str, ylabel: str, title: str) -> None:
@@ -498,6 +534,54 @@ def _apply_axes_style(ax, xlabel: str, ylabel: str, title: str) -> None:
     ax.set_title(title)
     ax.grid(True, linestyle="--", alpha=0.4)
     ax.legend(frameon=False)
+
+
+def plot_paper_figure(
+    rows: List[dict],
+    mode: str,
+    metric: str,
+    ylabel: str,
+    seeds: int,
+    out_dir: Path,
+) -> Path:
+    """Render one of the paper's Section IV figures from measured data.
+
+    Uses the paper's own axes, titles, series order and styling, so each output
+    is a drop-in regeneration of the corresponding published figure.
+    """
+    number, title = PAPER_FIGURES[(mode, metric)]
+    stats = aggregate(rows, metric)
+    hidden = underlaid_series(stats, PAPER_SERIES)
+
+    fig, ax = plt.subplots(figsize=(7.0, 4.8), dpi=150)
+    for name in PAPER_SERIES:
+        if name not in stats:
+            continue
+        sizes = sorted(stats[name])
+        covered = name in hidden
+        ax.plot(
+            sizes,
+            [stats[name][s][0] for s in sizes],
+            label=name,
+            linewidth=6.0 if covered else 1.8,
+            markersize=13 if covered else 7,
+            alpha=0.45 if covered else 1.0,
+            **PAPER_STYLE[name],
+        )
+
+    _apply_axes_style(ax, "Grid Size", ylabel, title)
+
+    caption = f"Mean of {seeds} independent seeds per grid size."
+    for first, second in coincident_series(stats, PAPER_SERIES):
+        caption += f" {first} and {second} coincide exactly, so one curve hides the other."
+
+    fig.text(0.01, 0.01, caption, fontsize=7, color="#555555")
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
+
+    path = out_dir / f"Fig{number}_{mode}.png"
+    fig.savefig(path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    return path
 
 
 def plot_metric(
@@ -558,7 +642,7 @@ def plot_metric(
     fig.text(0.01, 0.01, caption, fontsize=7, color="#555555")
     fig.tight_layout(rect=(0, 0.035 * (1 + caption.count("\n")), 1, 1))
 
-    path = out_dir / f"Fig_{short}_{mode}{suffix}.png"
+    path = out_dir / f"Supp_{short}_{mode}{suffix}.png"
     fig.savefig(path, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return path
@@ -623,7 +707,7 @@ def plot_summary(
     )
     fig.tight_layout(rect=(0, 0.03, 1, 0.96))
 
-    path = out_dir / f"Fig_summary_{mode}.png"
+    path = out_dir / f"Supp_summary_{mode}.png"
     fig.savefig(path, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return path
@@ -644,7 +728,7 @@ def plot_implementation_cost(
     discarded.
     """
     density = MODES[mode]["density"]
-    stats = aggregate(core_rows + repo_rows, "time_ms")
+    stats = aggregate(core_rows + repo_rows, "wall_ms")
     series = ["A*", "QHR-V2X", "QHR-V2X (repo, Qiskit)"]
 
     fig, ax = plt.subplots(figsize=(7.0, 4.6), dpi=150)
@@ -682,77 +766,7 @@ def plot_implementation_cost(
     )
     fig.tight_layout(rect=(0, 0.07, 1, 1))
 
-    path = out_dir / f"Fig_implementation_cost_{mode}.png"
-    fig.savefig(path, dpi=300, bbox_inches="tight")
-    plt.close(fig)
-    return path
-
-
-# The constant the paper's harness uses to turn a message count into a
-# "time": tests/test_pathfinding_all.py sets time_complexity_factor = 0.001.
-PAPER_TIME_FACTOR = 0.001
-
-# Colours and markers matching Figs. 3 and 6 of the paper, so the regenerated
-# version can be laid beside the published one.
-PAPER_STYLE = {
-    "A*": {"color": "#1f6fb4", "marker": "o"},
-    "QHR-V2X": {"color": "#d62728", "marker": "s"},
-    "Dijkstra": {"color": "#2ca02c", "marker": "^"},
-}
-
-
-def plot_paper_formula_rdt(
-    rows: List[dict], mode: str, seeds: int, out_dir: Path
-) -> Path:
-    """Rebuild the paper's RDT figure using the paper's own definition of RDT.
-
-    Figs. 3 and 6 plot `estimated_ms = avg_msgs * 0.001` rather than a measured
-    duration. This reproduces that construction exactly -- same formula, same
-    axes, same series styling -- but feeds it message counts that are defined
-    identically for all three algorithms. It is the like-for-like replacement
-    for the published figure, so the two can be compared directly.
-    """
-    stats = aggregate(rows, "messages")
-    density = MODES[mode]["density"]
-    series = ["A*", "QHR-V2X", "Dijkstra"]  # paper's legend order
-
-    hidden = underlaid_series(stats, series)
-
-    fig, ax = plt.subplots(figsize=(7.0, 4.6), dpi=150)
-    for name in series:
-        if name not in stats:
-            continue
-        sizes = sorted(stats[name])
-        covered = name in hidden
-        ax.plot(
-            sizes,
-            [stats[name][s][0] * PAPER_TIME_FACTOR for s in sizes],
-            label=name,
-            linewidth=6.0 if covered else 1.8,
-            markersize=13 if covered else 7,
-            alpha=0.45 if covered else 1.0,
-            **PAPER_STYLE[name],
-        )
-
-    _apply_axes_style(
-        ax,
-        "Grid Size",
-        "Estimated Time (ms)",
-        f"Estimated Route Discovery Time (RDT) under {density:.0%} obstacle density",
-    )
-
-    caption = (
-        f"Rebuilt with the paper's own definition, estimated_ms = mean RDM x {PAPER_TIME_FACTOR}, "
-        f"over {seeds} seeds per grid size.\nThe difference from the published figure is the "
-        "message counter: here all three algorithms are counted identically."
-    )
-    for first, second in coincident_series(stats, series):
-        caption += f"\n{first} and {second} coincide exactly, so one curve hides the other."
-
-    fig.text(0.01, 0.01, caption, fontsize=7, color="#555555")
-    fig.tight_layout(rect=(0, 0.035 * (1 + caption.count("\n")), 1, 1))
-
-    path = out_dir / f"Fig_RDT_paper_formula_{mode}.png"
+    path = out_dir / f"Supp_implementation_cost_{mode}.png"
     fig.savefig(path, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return path
@@ -807,7 +821,7 @@ def plot_solvability(out_dir: Path, trials: int = 60) -> Path:
     )
     fig.tight_layout(rect=(0, 0.07, 1, 1))
 
-    path = out_dir / "Fig_solvability_vs_density.png"
+    path = out_dir / "Supp_solvability_vs_density.png"
     fig.savefig(path, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return path
@@ -880,7 +894,7 @@ def plot_equation12_check(
     fig.text(0.01, 0.01, caption, fontsize=7, color="#555555")
     fig.tight_layout(rect=(0, 0.035 * (1 + caption.count("\n")), 1, 1))
 
-    path = out_dir / f"Fig_Eq12_check_{mode}.png"
+    path = out_dir / f"Supp_Eq12_check_{mode}.png"
     fig.savefig(path, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return path
@@ -896,7 +910,8 @@ def write_csv(rows: List[dict], path: Path) -> None:
         "expansions",
         "messages",
         "path_len",
-        "time_ms",
+        "rdt_ms",
+        "wall_ms",
         "optimal_hops",
     ]
     with path.open("w", newline="") as fh:
@@ -911,20 +926,24 @@ def summarise(rows: List[dict], mode: str, eta: float) -> str:
     lines.append(f"### {mode.title()} topology ({density:.0%} obstacles)\n")
 
     algos = sorted({r["algorithm"] for r in rows})
-    header = f"| {'Algorithm':<20} | {'RDT (ms)':>10} | {'RDM':>10} | {'PL (hops)':>10} | {'Ne':>10} | {'Optimal':>8} |"
+    header = (
+        f"| {'Algorithm':<20} | {'RDT (ms)':>10} | {'RDM':>10} | {'PL (hops)':>10} |"
+        f" {'Ne':>10} | {'Measured (ms)':>13} | {'Optimal':>8} |"
+    )
     lines.append(header)
     lines.append("|" + "|".join("-" * len(part) for part in header.split("|")[1:-1]) + "|")
 
     for algo in algos:
         subset = [r for r in rows if r["algorithm"] == algo]
-        rdt = statistics.fmean(r["time_ms"] for r in subset)
+        rdt = statistics.fmean(r["rdt_ms"] for r in subset)
         rdm = statistics.fmean(r["messages"] for r in subset)
         pl = statistics.fmean(r["path_len"] for r in subset)
         ne = statistics.fmean(r["expansions"] for r in subset)
+        wall = statistics.fmean(r["wall_ms"] for r in subset)
         optimal = sum(1 for r in subset if r["path_len"] == r["optimal_hops"])
         lines.append(
-            f"| {algo:<20} | {rdt:>10.3f} | {rdm:>10.1f} | {pl:>10.2f} | {ne:>10.1f} |"
-            f" {optimal}/{len(subset):<6} |"
+            f"| {algo:<20} | {rdt:>10.4f} | {rdm:>10.1f} | {pl:>10.2f} | {ne:>10.1f} |"
+            f" {wall:>13.3f} | {optimal}/{len(subset):<6} |"
         )
 
     stats = aggregate(rows, "expansions")
@@ -1018,30 +1037,40 @@ def main() -> int:
         write_csv(rows, csv_path)
         written.append(csv_path)
 
-        for metric, ylabel, short, description in METRICS:
-            written.append(
-                plot_metric(
-                    rows, metric, ylabel, short, description, mode, args.seeds, out_dir, series
+        # The paper's Section IV figures, regenerated.
+        for metric, ylabel, _short, _description in METRICS:
+            if (mode, metric) in PAPER_FIGURES:
+                written.append(
+                    plot_paper_figure(rows, mode, metric, ylabel, args.seeds, out_dir)
                 )
-            )
-        # RDM and RDT span orders of magnitude across grid sizes; a log companion
-        # keeps the small-grid behaviour legible.
+
+        # Supporting figures that are not in the paper.
         written.append(
             plot_metric(
                 rows,
-                "messages",
-                "Route Discovery Messages (log scale)",
-                "RDM",
-                "Control messages",
+                "wall_ms",
+                "Measured wall-clock time (ms)",
+                "measured_time",
+                "Measured search time",
                 mode,
                 args.seeds,
                 out_dir,
                 series,
-                suffix="_log",
-                logy=True,
             )
         )
-        written.append(plot_paper_formula_rdt(rows, mode, args.seeds, out_dir))
+        written.append(
+            plot_metric(
+                rows,
+                "expansions",
+                "Node Expansions $N_e$",
+                "expansions",
+                "Distinct nodes finalised",
+                mode,
+                args.seeds,
+                out_dir,
+                series,
+            )
+        )
         written.append(plot_summary(rows, mode, args.seeds, out_dir, series))
 
         eq12 = plot_equation12_check(rows, mode, args.eta, out_dir)
@@ -1099,7 +1128,7 @@ def main() -> int:
         "`round(size * size * density)` blocked cells. Corner-to-corner queries are not usable "
         "at the 40% dense setting: the resulting free-cell fraction of 0.60 sits just above the "
         "2D site-percolation threshold p_c ~ 0.5927, so opposite corners are rarely connected "
-        "once the grid is large (see `figures/Fig_solvability_vs_density.png`). Endpoints are "
+        "once the grid is large (see `figures/Supp_solvability_vs_density.png`). Endpoints are "
         "therefore drawn from the largest connected free component as an approximate-diameter "
         "pair, which keeps every instance solvable without silently lowering the density.\n\n"
         "## Which series appear where\n\n"
@@ -1110,7 +1139,7 @@ def main() -> int:
             "`QHR-V2X (sampled)` is the alternative reading of Eq. 11 -- sampling from the "
             "amplified distribution rather than taking its argmax. It is not a proposed method "
             "and exists only to record that the reading was tried, so it is confined to the "
-            "tables below and to `figures/Fig_Eq12_check_*.png`.\n\n"
+            "tables below and to `figures/Supp_Eq12_check_*.png`.\n\n"
             if args.include_stochastic
             else "Re-run with `--include-stochastic` to additionally measure the sampling reading "
             "of Eq. 11; it is excluded here.\n\n"

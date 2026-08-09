@@ -13,7 +13,7 @@ All algorithms are measured through one shared search skeleton, so every metric 
 
 ## Instance generation
 
-Obstacles are uniform random at the nominal density, i.e. `round(size * size * density)` blocked cells. Corner-to-corner queries are not usable at the 40% dense setting: the resulting free-cell fraction of 0.60 sits just above the 2D site-percolation threshold p_c ~ 0.5927, so opposite corners are rarely connected once the grid is large (see `figures/Fig_solvability_vs_density.png`). Endpoints are therefore drawn from the largest connected free component as an approximate-diameter pair, which keeps every instance solvable without silently lowering the density.
+Obstacles are uniform random at the nominal density, i.e. `round(size * size * density)` blocked cells. Corner-to-corner queries are not usable at the 40% dense setting: the resulting free-cell fraction of 0.60 sits just above the 2D site-percolation threshold p_c ~ 0.5927, so opposite corners are rarely connected once the grid is large (see `figures/Supp_solvability_vs_density.png`). Endpoints are therefore drawn from the largest connected free component as an approximate-diameter pair, which keeps every instance solvable without silently lowering the density.
 
 ## Which series appear where
 
@@ -25,45 +25,43 @@ Re-run with `--include-stochastic` to additionally measure the sampling reading 
 
 ### Sparse topology (20% obstacles)
 
-| Algorithm            |   RDT (ms) |        RDM |  PL (hops) |         Ne |  Optimal |
-|----------------------|------------|------------|------------|------------|----------|
-| A*                   |      0.252 |      498.0 |      58.14 |      194.8 | 100/100    |
-| Dijkstra             |      0.744 |     1751.5 |      58.14 |      876.2 | 100/100    |
-| QHR-V2X              |      2.938 |      498.0 |      58.14 |      194.8 | 100/100    |
+| Algorithm            |   RDT (ms) |        RDM |  PL (hops) |         Ne | Measured (ms) |  Optimal |
+|----------------------|------------|------------|------------|------------|---------------|----------|
+| A*                   |     0.4980 |      498.0 |      58.14 |      194.8 |         0.252 | 100/100    |
+| Dijkstra             |     1.7515 |     1751.5 |      58.14 |      876.2 |         0.746 | 100/100    |
+| QHR-V2X              |     0.4980 |      498.0 |      58.14 |      194.8 |         2.917 | 100/100    |
 
 Eq. 12 predicts N'e/Ne = 0.70; measured 1.0000-1.0000 across grid sizes.
 
 
 ### Dense topology (40% obstacles)
 
-| Algorithm            |   RDT (ms) |        RDM |  PL (hops) |         Ne |  Optimal |
-|----------------------|------------|------------|------------|------------|----------|
-| A*                   |      1.085 |     2064.6 |     129.93 |     1003.9 | 100/100    |
-| Dijkstra             |      1.093 |     2558.6 |     129.93 |     1279.7 | 100/100    |
-| QHR-V2X              |     13.604 |     2064.6 |     129.93 |     1003.9 | 100/100    |
+| Algorithm            |   RDT (ms) |        RDM |  PL (hops) |         Ne | Measured (ms) |  Optimal |
+|----------------------|------------|------------|------------|------------|---------------|----------|
+| A*                   |     2.0646 |     2064.6 |     129.93 |     1003.9 |         1.088 | 100/100    |
+| Dijkstra             |     2.5586 |     2558.6 |     129.93 |     1279.7 |         1.098 | 100/100    |
+| QHR-V2X              |     2.0646 |     2064.6 |     129.93 |     1003.9 |        13.570 | 100/100    |
 
 Eq. 12 predicts N'e/Ne = 0.70; measured 1.0000-1.0000 across grid sizes.
 
 
 ## Figures
 
-- `figures/Fig_solvability_vs_density.png`
-- `figures/Fig_RDT_sparse.png`
-- `figures/Fig_RDM_sparse.png`
-- `figures/Fig_PL_sparse.png`
-- `figures/Fig_Ne_sparse.png`
-- `figures/Fig_RDM_sparse_log.png`
-- `figures/Fig_RDT_paper_formula_sparse.png`
-- `figures/Fig_summary_sparse.png`
-- `figures/Fig_Eq12_check_sparse.png`
-- `figures/Fig_RDT_dense.png`
-- `figures/Fig_RDM_dense.png`
-- `figures/Fig_PL_dense.png`
-- `figures/Fig_Ne_dense.png`
-- `figures/Fig_RDM_dense_log.png`
-- `figures/Fig_RDT_paper_formula_dense.png`
-- `figures/Fig_summary_dense.png`
-- `figures/Fig_Eq12_check_dense.png`
+- `figures/Supp_solvability_vs_density.png`
+- `figures/Fig6_sparse.png`
+- `figures/Fig7_sparse.png`
+- `figures/Fig8_sparse.png`
+- `figures/Supp_measured_time_sparse.png`
+- `figures/Supp_expansions_sparse.png`
+- `figures/Supp_summary_sparse.png`
+- `figures/Supp_Eq12_check_sparse.png`
+- `figures/Fig3_dense.png`
+- `figures/Fig4_dense.png`
+- `figures/Fig5_dense.png`
+- `figures/Supp_measured_time_dense.png`
+- `figures/Supp_expansions_dense.png`
+- `figures/Supp_summary_dense.png`
+- `figures/Supp_Eq12_check_dense.png`
 
 ## Reproduce
 
