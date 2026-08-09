@@ -4,7 +4,7 @@
 # This Makefile provides convenient commands for reproducing
 # research results and managing the academic codebase.
 
-.PHONY: help install test clean reproduce analyze figures all
+.PHONY: help install test clean reproduce analyze figures figures-all all
 
 # Default target
 help:
@@ -18,7 +18,8 @@ help:
 	@echo "Research Commands:"
 	@echo "  make reproduce   - Reproduce all paper results"
 	@echo "  make analyze     - Run statistical analysis"
-	@echo "  make figures     - Generate publication figures"
+	@echo "  make figures     - Reproduce results, then generate paper Figures 3-8"
+	@echo "  make figures-all - Generate all 40 figures (6 paper + 34 others)"
 	@echo "  make all         - Run complete research pipeline"
 	@echo ""
 	@echo "Utility Commands:"
@@ -41,9 +42,11 @@ test:
 	@echo "✅ Tests completed!"
 
 # Reproduce paper results
+# Restricted to the three algorithms the paper compares, so the CSV that feeds
+# the figures contains exactly the published series.
 reproduce:
 	@echo "🔬 Reproducing paper results..."
-	poetry run python experiments/scripts/reproduce_paper_results.py
+	poetry run python experiments/scripts/reproduce_paper_results.py --algorithms qhr_v2x,astar,dijkstra
 	@echo "✅ Paper results reproduced!"
 
 # Statistical analysis
@@ -52,15 +55,25 @@ analyze:
 	poetry run python experiments/analysis/analyze_results.py
 	@echo "✅ Analysis completed!"
 
-# Generate figures
-figures: analyze
-	@echo "📈 Figures generated in experiments/analysis/results/"
-	@ls -la experiments/analysis/results/*.png 2>/dev/null || echo "No figures found. Run 'make analyze' first."
+# Generate the paper's Figures 3-8 from the benchmark output.
+# Depends on `reproduce` so the figures can never be drawn from stale CSVs.
+figures: reproduce
+	@echo "📈 Generating paper Figures 3-8..."
+	poetry run python experiments/analysis/paper_figures.py
+	@echo "✅ Figures generated in experiments/results/paper_figures/"
+
+# Full catalogue: the six paper figures plus every other view of the same CSVs
+# (log scales, bar charts, overview panels, relative overhead, CVD-safe palette).
+figures-all: figures
+	@echo "📈 Generating the full figure catalogue..."
+	poetry run python experiments/analysis/all_figures.py
+	@echo "✅ Catalogue generated in experiments/results/all_figures/ (see MANIFEST.md)"
 
 # Complete research pipeline
-all: install test reproduce analyze
+all: install test figures analyze
 	@echo "🎉 Complete research pipeline finished!"
 	@echo "📁 Results available in experiments/results/"
+	@echo "📊 Paper figures in experiments/results/paper_figures/"
 	@echo "📊 Analysis available in experiments/analysis/results/"
 
 # Code quality
@@ -79,6 +92,7 @@ clean:
 	@echo "🧹 Cleaning generated files..."
 	rm -rf experiments/results/
 	rm -rf experiments/analysis/results/
+	rm -rf benchmarks/results/
 	rm -rf __pycache__/
 	find . -name "*.pyc" -delete
 	find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true

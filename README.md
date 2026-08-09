@@ -61,14 +61,45 @@ poetry install
 
 ### 2. **Reproduce Paper Results**
 ```bash
-# Complete paper reproduction (recommended for research)
+# Paper Figures 3-8, from a clean checkout, in one command.
+# Runs the algorithms, writes the CSVs, then draws the figures.
+make figures
+
+# Complete pipeline (install, tests, figures, statistical analysis)
 make all
 
 # Or step by step
-make reproduce    # Reproduce all experimental results
+make reproduce    # Run the algorithms and export benchmark CSVs
+make figures      # Reproduce, then generate paper Figures 3-8
 make analyze      # Run statistical analysis
-make figures      # Generate publication-ready figures
 ```
+
+**Where the figures land:** `experiments/results/paper_figures/Figure_{3..8}_*.png`
+
+For every other view of the same data — log scales, bar charts, per-mode overview
+panels, overhead relative to A*, and a colour-vision-safe palette — run:
+
+```bash
+make figures-all   # 40 figures total: the 6 above + 34 more
+```
+
+These land in `experiments/results/all_figures/`, catalogued in
+[`MANIFEST.md`](experiments/results/all_figures/MANIFEST.md).
+
+`make figures` depends on `make reproduce`, so the figures are always drawn from a
+fresh benchmark run rather than a stale CSV. `make clean` removes every generated
+artifact, including `benchmarks/results/`. Nothing in the figure pipeline is
+hard-coded: every plotted point comes from a live call to the algorithm under test,
+and `paper_figures.py` prints all plotted values so each point can be checked
+against the figure.
+
+Results are seeded, so `msgs` and `path_len` are identical on every run; measured
+`time_ms` varies with machine load, as expected.
+
+> **Note on Figures 3, 4, 6 and 7.** The A* and Dijkstra series reproduce the
+> published values exactly, as do all three series in Figures 5 and 8. The QHR-V2X
+> series in Figures 3, 4, 6 and 7 does not match the published curve. See
+> [VERIFICATION.md](VERIFICATION.md) for the analysis.
 
 ### 3. **Quick Testing**
 ```bash
@@ -209,9 +240,30 @@ S . . . . . . . G    S = Start point
 
 ### **What You Need to Know**
 - **Qiskit**: IBM's quantum computing framework
+- **Qiskit-Aer**: Quantum circuit simulator (runs on your computer)
 - **Simulation**: We're running quantum algorithms on regular computers (simulating quantum behavior)
 - **Performance**: Quantum algorithms may be slower on classical hardware due to simulation overhead
 - **Research**: These demonstrate theoretical advantages for future quantum computers
+
+### **📚 Learning Qiskit-Aer**
+
+**New to quantum computing or qiskit-aer?** We've created comprehensive guides:
+
+- **[QISKIT_AER_GUIDE.md](QISKIT_AER_GUIDE.md)** - Complete guide with detailed explanations, examples, and troubleshooting
+- **[QISKIT_AER_QUICKSTART.md](QISKIT_AER_QUICKSTART.md)** - Quick reference for experienced users
+- **[examples/qiskit_aer_example.py](examples/qiskit_aer_example.py)** - Runnable example demonstrating quantum pathfinding
+
+**Quick Installation:**
+```bash
+pip install qiskit-aer
+# or
+poetry add qiskit-aer
+```
+
+**Test your installation:**
+```bash
+poetry run python examples/qiskit_aer_example.py
+```
 
 ### **Environment Variables**
 ```bash
