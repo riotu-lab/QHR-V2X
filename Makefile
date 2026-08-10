@@ -20,7 +20,8 @@ help:
 	@echo "  make analyze     - Run statistical analysis"
 	@echo "  make figures     - Reproduce results, then generate paper Figures 3-8"
 	@echo "  make figures-all - Generate all 40 figures (6 paper + 34 others)"
-	@echo "                     add SEED=paper to use the published obstacle layout"
+	@echo "                     SEED=paper|<int>   published or specific layout"
+	@echo "                     STYLE=curved       smooth lines (default straight)"
 	@echo "  make all         - Run complete research pipeline"
 	@echo ""
 	@echo "Utility Commands:"
@@ -53,6 +54,11 @@ test:
 SEED ?=
 SEED_ARG = $(if $(SEED),--seed $(SEED),)
 
+# STYLE selects how the figure points are joined: straight (default) or curved.
+#   make figures STYLE=curved
+STYLE ?=
+STYLE_ARG = $(if $(STYLE),--line-style $(STYLE),)
+
 reproduce:
 	@echo "🔬 Reproducing paper results..."
 	poetry run python experiments/scripts/reproduce_paper_results.py --algorithms qhr_v2x,astar,dijkstra $(SEED_ARG)
@@ -68,14 +74,14 @@ analyze:
 # Depends on `reproduce` so the figures can never be drawn from stale CSVs.
 figures: reproduce
 	@echo "📈 Generating paper Figures 3-8..."
-	poetry run python experiments/analysis/paper_figures.py
+	poetry run python experiments/analysis/paper_figures.py $(STYLE_ARG)
 	@echo "✅ Figures generated in experiments/results/paper_figures/"
 
 # Full catalogue: the six paper figures plus every other view of the same CSVs
 # (log scales, bar charts, overview panels, relative overhead, CVD-safe palette).
 figures-all: figures
 	@echo "📈 Generating the full figure catalogue..."
-	poetry run python experiments/analysis/all_figures.py
+	poetry run python experiments/analysis/all_figures.py $(STYLE_ARG)
 	@echo "✅ Catalogue generated in experiments/results/all_figures/ (see MANIFEST.md)"
 
 # Complete research pipeline

@@ -113,8 +113,15 @@ with machine load, as expected.
 ### Line style
 
 ```bash
-make figures                                                   # straight (default)
-python experiments/analysis/paper_figures.py --line-style curved
+make figures                    # straight (default)
+make figures STYLE=curved       # smooth, matching the published figures
+```
+
+`SEED` and `STYLE` combine freely:
+
+```bash
+make figures SEED=paper STYLE=curved   # closest to the published figures
+make figures-all SEED=paper            # all 40, published layout, straight
 ```
 
 `straight` joins the measured points with segments, so nothing is drawn that was
