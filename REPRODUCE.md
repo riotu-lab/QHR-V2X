@@ -121,6 +121,9 @@ src/                     algorithm implementations; qhr_v2x.py is the contributi
 tests/                   benchmark harness and grid construction
 experiments/scripts/     reproduce_paper_results.py — runs the benchmark
 experiments/analysis/    figure generation
-experiments/results/     output (only paper_figures/ is tracked)
+experiments/results/     output; only paper_figures/ is tracked, because it is
+                         byte-reproducible under SEED=paper. The CSVs and the
+                         other figures carry timestamps and measured wall-clock
+                         times, so they are regenerated rather than committed.
 VERIFICATION.md          what reproduces, what does not, and the evidence
 ```
