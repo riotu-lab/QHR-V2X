@@ -186,7 +186,8 @@ def _best_first(
     start: Coord,
     goal: Coord,
     heuristic: Callable[[int, int], float],
-    select: Callable[[List[Tuple[float, int]]], Tuple[float, int]] | None = None,
+    select: Callable[[List[Tuple[float, ...]]], Tuple[float, ...]] | None = None,
+    tie_break: bool = False,
 ) -> SearchResult:
     """Uniform best-first search skeleton.
 
@@ -205,16 +206,28 @@ def _best_first(
     closed = [False] * n
     g_cost[start_idx] = 0.0
 
-    frontier: List[Tuple[float, int]] = [(heuristic(start_idx, goal_idx), start_idx)]
+    # With tie_break, the heap key carries h as a secondary component, so equal-f
+    # entries are ordered by remaining distance across the whole frontier rather
+    # than by node index. src/qhr_v2x.py keys its heap this way; the classical
+    # baselines do not, and must not, since their published numbers depend on the
+    # arbitrary tie-breaking they actually use.
+    def key(node: int) -> Tuple[float, ...]:
+        f = g_cost[node] + heuristic(node, goal_idx)
+        return (f, heuristic(node, goal_idx), node) if tie_break else (f, node)
+
+    frontier: List[Tuple[float, ...]] = [key(start_idx)]
 
     expansions = 0
     messages = 0
 
     while frontier:
         if select is None:
-            _, current = heapq.heappop(frontier)
+            current = heapq.heappop(frontier)[-1]
         else:
-            _, current = select(frontier)
+            chosen = select(frontier, closed)
+            if chosen is None:
+                break
+            current = chosen[-1]
 
         if closed[current]:
             continue
@@ -237,7 +250,7 @@ def _best_first(
             if tentative < g_cost[neighbour]:
                 g_cost[neighbour] = tentative
                 parent[neighbour] = current
-                heapq.heappush(frontier, (tentative + heuristic(neighbour, goal_idx), neighbour))
+                heapq.heappush(frontier, key(neighbour))
                 messages += 1  # one update per accepted relaxation
 
     return [], expansions, messages
@@ -265,9 +278,25 @@ def astar(grid: np.ndarray, start: Coord, goal: Coord) -> SearchResult:
 
 
 def _amplified_probabilities(
-    f_values: Sequence[float], temperature: float, eta: float
+    f_values: Sequence[float],
+    promise: Sequence[float] | None,
+    temperature: float,
+    eta: float,
 ) -> np.ndarray:
-    """Paper Eqs. (9)-(11): softmax, amplify against the mean, renormalise."""
+    """Paper Eqs. (9)-(11): softmax, amplify against the mean, renormalise.
+
+    ``promise`` is the remaining-distance estimate h for each candidate. It is
+    what makes the amplification do anything on an f-plateau: with the Manhattan
+    heuristic on a unit-cost grid every monotone start->goal path carries the
+    same f, so within the plateau Eq. 9 is uniform and the Eq. 10 test against
+    mean(f) scales every candidate identically. Applying the same reinforcement
+    to h reinforces the candidate nearer the destination, which is the paper's
+    "bias expansion toward more promising nodes" and collapses the plateau.
+
+    Passing ``promise=None`` reproduces the f-only reading of Eqs. (9)-(11),
+    whose argmax provably coincides with A*'s choice - see
+    message-counting-note.md section 4.
+    """
     f = np.asarray(f_values, dtype=float)
 
     # Eq. 9, shifted for numerical stability (does not change the distribution).
@@ -277,6 +306,11 @@ def _amplified_probabilities(
 
     # Eq. 10: reinforce below-mean cost, attenuate the rest.
     p = np.where(f < f.mean(), (1.0 + eta) * p, (1.0 - eta) * p)
+
+    # Eq. 10 applied to promise, resolving the plateau degeneracy above.
+    if promise is not None:
+        h = np.asarray(promise, dtype=float)
+        p = np.where(h < h.mean(), (1.0 + eta) * p, (1.0 - eta) * p)
 
     # Eq. 11.
     total = p.sum()
@@ -288,6 +322,8 @@ def _make_qhr_selector(
     temperature: float,
     eta: float,
     rng: np.random.Generator | None,
+    heuristic: Callable[[int, int], float] | None = None,
+    goal_idx: int | None = None,
 ) -> Callable[[List[Tuple[float, int]]], Tuple[float, int]]:
     """QHR-V2X frontier selection.
 
@@ -296,17 +332,50 @@ def _make_qhr_selector(
     the heap. With ``rng=None`` selection is argmax over the amplified
     probabilities, exactly as Algorithm 1 step 4 specifies; with an ``rng`` it
     samples from them instead.
+
+    Supplying ``heuristic`` and ``goal_idx`` feeds each candidate's remaining
+    distance into the amplification, matching ``src/qhr_v2x.py``. Omitting them
+    gives the f-only reading, whose argmax coincides with A*.
     """
 
-    def select(frontier: List[Tuple[float, int]]) -> Tuple[float, int]:
-        k = min(candidate_size, len(frontier))
-        candidates = [heapq.heappop(frontier) for _ in range(k)]
+    def select(frontier, closed=None):
+        # Draw the candidate set, discarding stale duplicates as src/qhr_v2x.py
+        # does, so a superseded entry never consumes a selection round.
+        candidates = []
+        while frontier and len(candidates) < candidate_size:
+            entry = heapq.heappop(frontier)
+            if closed is not None and closed[entry[-1]]:
+                continue
+            candidates.append(entry)
 
+        if not candidates:
+            return None
+        k = len(candidates)
         if k == 1:
             return candidates[0]
 
-        probs = _amplified_probabilities([f for f, _ in candidates], temperature, eta)
-        choice = int(np.argmax(probs)) if rng is None else int(rng.choice(k, p=probs))
+        promise = (
+            [heuristic(entry[-1], goal_idx) for entry in candidates]
+            if heuristic is not None and goal_idx is not None
+            else None
+        )
+        probs = _amplified_probabilities(
+            [entry[0] for entry in candidates], promise, temperature, eta
+        )
+        if rng is not None:
+            choice = int(rng.choice(k, p=probs))
+        elif promise is None:
+            choice = int(np.argmax(probs))
+        else:
+            # Algorithm 1 step 4 takes the maximum amplified probability. Eq. 10
+            # is a two-valued factor, so candidates routinely tie at the maximum;
+            # resolve those by the smaller remaining distance, which is the
+            # ordering src/qhr_v2x.py gets from its (f, h, node) heap keys.
+            best = probs.max()
+            choice = min(
+                (i for i in range(k) if probs[i] >= best - 1e-12),
+                key=lambda i: promise[i],
+            )
 
         for i, entry in enumerate(candidates):
             if i != choice:
@@ -317,12 +386,31 @@ def _make_qhr_selector(
 
 
 def make_qhr_v2x(
-    candidate_size: int, temperature: float, eta: float, stochastic: bool = False, seed: int = 0
+    candidate_size: int,
+    temperature: float,
+    eta: float,
+    stochastic: bool = False,
+    seed: int = 0,
+    use_promise: bool = True,
 ) -> Callable[[np.ndarray, Coord, Coord], SearchResult]:
+    """QHR-V2X as implemented in ``src/qhr_v2x.py``.
+
+    ``use_promise=False`` selects the f-only reading of Eqs. (9)-(11) instead,
+    retained so the two can be compared directly.
+    """
+
     def run(grid: np.ndarray, start: Coord, goal: Coord) -> SearchResult:
         rng = np.random.default_rng(seed) if stochastic else None
-        selector = _make_qhr_selector(candidate_size, temperature, eta, rng)
-        return _best_first(grid, start, goal, _manhattan_factory(grid.shape[1]), selector)
+        cols = grid.shape[1]
+        heuristic = _manhattan_factory(cols)
+        goal_idx = goal[0] * cols + goal[1]
+        selector = _make_qhr_selector(
+            candidate_size, temperature, eta, rng,
+            heuristic if use_promise else None,
+            goal_idx if use_promise else None,
+        )
+        return _best_first(grid, start, goal, heuristic, selector,
+                           tie_break=use_promise)
 
     return run
 

@@ -39,6 +39,11 @@ ordering, and path lengths remain identical across all three algorithms
 **Still open:** §2.4 (link-cost model of Eq. 2), §2.5 (obstacle densities),
 §2.6 (single run rather than 20 seeds).
 
+**Important qualification — see §2.9.** The reduction above is conditional. It
+holds on the repository's near-empty grids traversed toward the high-index
+corner. At the 40 % density Table 1 specifies it is ~1 %, and against an A* that
+breaks its own f-ties toward the goal it disappears entirely.
+
 ---
 
 Artifacts produced:
@@ -292,6 +297,66 @@ not. An A* whose node selection is biased by amplitude amplification is sound in
 principle; it just never ran here (§2.1). Fixing §2.1–2.3 yields a genuine
 constant-factor `(1-η)` reduction below A* — a lower curve of the same shape, not a
 flat line.
+
+## 2.9 The reduction is conditional on density and traversal direction
+
+Measured with `experiments/scripts/generate_comparison_charts.py`, which builds
+grids at their *nominal* density and draws endpoints from the largest connected
+component, so every instance is solvable and the density is the stated one. All
+three algorithms share one search skeleton and one counter. 75×75, 10 seeds.
+
+"fwd" runs the instance as generated; "rev" swaps start and goal. Nothing else
+differs between the two columns — same grids, same obstacles, same path lengths.
+
+| Density | A* fwd | QHR fwd | reduction | A* rev | QHR rev | reduction |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2 % | 186.7 | 186.7 | **0.0 %** | 5389.0 | 219.1 | **95.9 %** |
+| 5 % | 231.9 | 231.9 | 0.0 % | 5105.3 | 746.8 | 85.4 % |
+| 10 % | 430.3 | 430.3 | 0.0 % | 4340.9 | 795.5 | 81.7 % |
+| 20 % | 906.8 | 903.5 | 0.4 % | 3289.1 | 1683.8 | 48.8 % |
+| 30 % | 1813.3 | 1776.2 | 2.0 % | 1974.9 | 1618.7 | 18.0 % |
+| **40 %** | 1394.7 | 1386.2 | **0.6 %** | 1439.7 | 1420.8 | **1.3 %** |
+
+Two things follow, and both bear on the paper's central claim.
+
+**The advantage is a density artifact.** At the 40 % density Table 1 specifies,
+the reduction is ~1 %, not the 96 % obtained on the repository's grids. The large
+figure depends on the grids being nearly empty — which they are, at 1.6–12 %
+(§2.5). Dense obstacle fields fragment the f-plateau that the amplification
+exists to collapse, so there is little left to gain.
+
+**Half of it is A*'s own tie-breaking, not the amplification.** A* at 2 % costs
+186.7 expansions forward and 5389.0 reversed — 29× worse, on identical grids,
+purely because `heapq` orders equal-f entries by node index, which points toward
+the goal in one direction and away from it in the other. QHR-V2X's amplification
+supplies a goal-directed tie-break, so it recovers that loss where A* suffers it
+and adds nothing where A* does not.
+
+The controlling comparison is QHR-V2X against a *well-tie-broken* A*, i.e. the
+"rev" QHR column against the "fwd" A* column: 219.1 vs 186.7 at 2 %, 795.5 vs
+430.3 at 10 %. **QHR-V2X does not beat an A* that breaks its own f-ties toward
+the goal at any density tested.** Goal-directed tie-breaking is a standard
+classical technique, so the honest statement of the contribution is that the
+amplification of Eqs. 9–11 is equivalent to it — not that it outperforms A*.
+
+This also explains §2.3's finding that the measured reduction grows with grid
+size rather than holding at the constant `(1-η)` of Eq. 12: what grows is the
+f-plateau, and with it the size of A*'s tie-breaking loss.
+
+## 2.10 Corner-to-corner queries are unusable at 40 % density
+
+Independently found while preparing the artifact and recorded in
+`message-counting-note.md` §6. For uniform random obstacles at 40 %, the
+free-cell fraction of 0.60 sits just above the 2-D site-percolation threshold
+p_c ≈ 0.5927, so opposite corners of a large grid are almost never connected —
+no connected corner pair in 200 draws at 75×75.
+
+This makes the §2.5 recommendation ("fix the generator to hit 20 %/40 %")
+insufficient on its own: correcting the density alone would leave most instances
+unsolvable. `generate_comparison_charts.py` handles it by drawing endpoints from
+the largest connected component via a BFS double sweep, keeping every instance
+solvable at the nominal density. Clustered rather than uniform obstacles would
+be another option and is arguably closer to an urban layout.
 
 ## 3. Summary
 
