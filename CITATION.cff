@@ -1,0 +1,49 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper below."
+title: "QHR-V2X: A Quantum-Heuristic Routing Framework for Efficient V2X Path Discovery"
+abstract: >-
+  Reference implementation and reproduction artifact for QHR-V2X, a routing
+  framework that combines A* heuristic search with quantum-inspired amplitude
+  amplification for V2X path discovery. Includes the algorithm implementations,
+  the benchmark harness, the figure-generation pipeline for the paper's
+  Figures 3-8, and a verification report.
+type: software
+license: MIT
+repository-code: "https://github.com/riotu-lab/QHR-V2X"
+authors:
+  - family-names: Khan
+    given-names: Zahid
+    affiliation: "Robotics and Internet-of-Things Laboratory, Prince Sultan University"
+  - family-names: Almogbil
+    given-names: Sultan Hamad
+    affiliation: "Robotics and Internet-of-Things Laboratory, Prince Sultan University"
+  - family-names: Babar
+    given-names: Muhammad
+    affiliation: "Robotics and Internet-of-Things Laboratory, Prince Sultan University"
+  - family-names: Ammar
+    given-names: Adel
+    affiliation: "Robotics and Internet-of-Things Laboratory, Prince Sultan University"
+  - family-names: Boulila
+    given-names: Wadii
+    affiliation: "Robotics and Internet-of-Things Laboratory, Prince Sultan University"
+preferred-citation:
+  type: article
+  title: "QHR-V2X: A Quantum-Heuristic Routing Framework for Efficient V2X Path Discovery"
+  journal: "IEEE Open Journal of the Communications Society"
+  volume: 7
+  start: 211
+  end: 220
+  year: 2026
+  doi: "10.1109/OJCOMS.2025.3644144"
+  issn: "2644-125X"
+  authors:
+    - family-names: Khan
+      given-names: Zahid
+    - family-names: Almogbil
+      given-names: Sultan Hamad
+    - family-names: Babar
+      given-names: Muhammad
+    - family-names: Ammar
+      given-names: Adel
+    - family-names: Boulila
+      given-names: Wadii

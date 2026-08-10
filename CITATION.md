@@ -3,13 +3,15 @@
 If you use this code in your research, please cite the following paper:
 
 ```bibtex
-@article{khan2024qhr,
-  title={QHR-V2X: A Quantum-Heuristic Routing Framework for Efficient V2X Path Discovery},
-  author={Khan, Zahid and Almogbil, Sultan and Babar, Muhammad and Ammar, Adel and Boulila, Wadii},
-  journal={arXiv preprint arXiv:XXXX.XXXXX},
-  year={2024},
-  institution={Robotics and Internet-of-Things (RIOTU) Laboratory, Prince Sultan University},
-  address={Riyadh 11586, Saudi Arabia}
+@article{khan2026qhrv2x,
+  title   = {{QHR-V2X}: A Quantum-Heuristic Routing Framework for Efficient {V2X} Path Discovery},
+  author  = {Khan, Zahid and Almogbil, Sultan Hamad and Babar, Muhammad and Ammar, Adel and Boulila, Wadii},
+  journal = {IEEE Open Journal of the Communications Society},
+  volume  = {7},
+  pages   = {211--220},
+  year    = {2026},
+  doi     = {10.1109/OJCOMS.2025.3644144},
+  issn    = {2644-125X}
 }
 ```
 

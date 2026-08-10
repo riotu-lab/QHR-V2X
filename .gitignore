@@ -67,3 +67,23 @@ dmypy.json
 *.zip
 *.tar.gz
 *.rar
+# ---------------------------------------------------------------------------
+# Generated benchmark output.
+#
+# `make figures` rebuilds all of this from the algorithms on every run, so
+# tracking it only produces churn. The canonical figure set that the paper
+# links to is kept under experiments/results/paper_figures/ and is regenerated
+# deliberately (see REPRODUCE.md), not on every local run.
+# ---------------------------------------------------------------------------
+benchmarks/results/
+experiments/results/all_figures/
+experiments/results/diagnostics/
+experiments/results/paper_figures/*_curved.png
+experiments/results/paper_figures/*_hops.png
+
+# Scratch files kept out of the published artifact
+guide.html
+style.css
+output.pdf
+image.png
+image copy.png

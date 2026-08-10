@@ -39,14 +39,24 @@ This project implements the **QHR-V2X (Quantum-Heuristic Routing for V2X)** fram
 > *Zahid Khan, Sultan Almogbil, Muhammad Babar, Adel Ammar, and Wadii Boulila*  
 > *Robotics and Internet-of-Things (RIOTU) Laboratory, Prince Sultan University*
 
-### **Key Features Implemented:**
-- ✅ **Grid-based V2X simulation** with 20% (sparse) and 40% (dense) obstacle densities
-- ✅ **Grid sizes**: 10×10 to 100×100 (matches paper specifications)
-- ✅ **Performance metrics**: Route Discovery Time (RDT), Route Discovery Messages (RDM), Path Length (PL)
-- ✅ **Quantum amplitude amplification** integrated with A* heuristic search
-- ✅ **Classical baselines**: Dijkstra and A* for comparison
-- ✅ **Python 3.11 + Qiskit** simulation environment (matches paper)
-- ✅ **Professional benchmarking** with CSV export and visualization
+### **Implemented**
+- ✅ **Grid-based route discovery** in sparse and dense topologies
+- ✅ **Grid sizes**: 10×10 to 100×100, as in the paper
+- ✅ **Metrics**: Route Discovery Time (RDT), Route Discovery Messages (RDM), Path Length (PL)
+- ✅ **Amplitude amplification** (Eqs. 9–11) biasing A* node selection, with an
+  optional Grover circuit on the Qiskit AerSimulator
+- ✅ **Classical baselines**: Dijkstra and A*
+- ✅ **Python 3.11 + Qiskit**, as in the paper
+- ✅ **Benchmark harness** with CSV export, 40 generated figures, seeded replay
+
+### **Not yet implemented — see [VERIFICATION.md](VERIFICATION.md)**
+- ⚠️ **Obstacle density**: the generators realise 1.6–12% obstacles, not the 20%
+  and 40% stated in Table 1, and the density falls as the grid grows
+- ⚠️ **Link-cost model** of Eq. 2 (`α·d + β·τ + γ·(1−R)`): every edge costs one
+  hop; link reliability, SNR, transmission range and the mobility models of
+  Eqs. 3–6 are absent
+- ⚠️ **Repetitions**: one run per configuration, not Table 1's 20 independent
+  seeds, so no variance is reported
 
 ## 🚀 Quick Start (5 minutes to running!)
 
@@ -83,8 +93,9 @@ panels, overhead relative to A*, and a colour-vision-safe palette — run:
 make figures-all   # 40 figures total: the 6 above + 34 more
 ```
 
-These land in `experiments/results/all_figures/`, catalogued in
-[`MANIFEST.md`](experiments/results/all_figures/MANIFEST.md).
+These land in `experiments/results/all_figures/`, alongside a generated
+`MANIFEST.md` describing every file. That directory is not tracked — it is rebuilt
+from the algorithms on each run.
 
 `make figures` depends on `make reproduce`, so the figures are always drawn from a
 fresh benchmark run rather than a stale CSV. `make clean` removes every generated
@@ -287,8 +298,7 @@ S . . . . . . . G    S = Start point
 
 **New to quantum computing or qiskit-aer?** We've created comprehensive guides:
 
-- **[QISKIT_AER_GUIDE.md](QISKIT_AER_GUIDE.md)** - Complete guide with detailed explanations, examples, and troubleshooting
-- **[QISKIT_AER_QUICKSTART.md](QISKIT_AER_QUICKSTART.md)** - Quick reference for experienced users
+- **[QISKIT_AER_COMPLETE_GUIDE.md](QISKIT_AER_COMPLETE_GUIDE.md)** - Guide with explanations, examples, and troubleshooting
 - **[examples/qiskit_aer_example.py](examples/qiskit_aer_example.py)** - Runnable example demonstrating quantum pathfinding
 
 **Quick Installation:**

@@ -1,6 +1,6 @@
 # QHR-V2X Paper Reproduction Results
 
-**Generated on**: 2026-08-10 10:06:37
+**Generated on**: 2026-08-10 10:19:26
 
 **Algorithms tested**: qhr_v2x, astar, dijkstra
 
@@ -18,17 +18,17 @@
 **astar**:
 - Average RDM: 1777.14
 - Average PL: 75.55
-- Average RDT: 3.670 ms
+- Average RDT: 3.713 ms
 
 **qhr_v2x**:
 - Average RDM: 91.31
 - Average PL: 75.55
-- Average RDT: 1.882 ms
+- Average RDT: 1.900 ms
 
 **dijkstra**:
 - Average RDM: 3337.82
 - Average PL: 75.55
-- Average RDT: 5.295 ms
+- Average RDT: 5.267 ms
 
 
 ### Sparse Environment Results
@@ -36,17 +36,17 @@
 **astar**:
 - Average RDM: 443.76
 - Average PL: 47.13
-- Average RDT: 0.886 ms
+- Average RDT: 0.905 ms
 
 **qhr_v2x**:
 - Average RDM: 106.85
 - Average PL: 47.13
-- Average RDT: 1.699 ms
+- Average RDT: 1.678 ms
 
 **dijkstra**:
 - Average RDM: 901.11
 - Average PL: 47.13
-- Average RDT: 1.401 ms
+- Average RDT: 1.411 ms
 
 
 ## Files Generated
