@@ -56,12 +56,31 @@ def main():
     )
     
     parser.add_argument(
+        "--seed",
+        type=str,
+        default=None,
+        help="RNG seed for the dense obstacle layout. Omit (the default) to draw a "
+             "fresh seed each run; pass 'paper' for the seed behind the published "
+             "figures, or any integer to replay a specific run. The seed used is "
+             "printed and written to the results CSV. Sparse mode is deterministic "
+             "by construction, so the seed does not affect it."
+    )
+
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Enable verbose output"
     )
-    
+
     args = parser.parse_args()
+
+    # "paper" and "random" pass through as strings; anything else numeric is an int.
+    seed = args.seed
+    if seed is not None and seed not in ("paper", "random"):
+        try:
+            seed = int(seed)
+        except ValueError:
+            parser.error(f"--seed must be an integer, 'paper', or 'random' (got {seed!r})")
     
     # Parse algorithms
     algorithms = [alg.strip() for alg in args.algorithms.split(",")]
@@ -74,6 +93,7 @@ def main():
     print("=" * 50)
     print(f"📊 Algorithms: {', '.join(algorithms)}")
     print(f"📁 Output directory: {output_dir}")
+    print(f"🎲 Seed: {'fresh per run (default)' if seed is None else seed}")
     print(f"🕐 Started at: {time.strftime('%Y-%m-%d %H:%M:%S')}")
     print()
     
@@ -91,7 +111,8 @@ def main():
         mode="dense",
         export_csv=True,
         export_compiled_results=True,
-        suppress_warnings=True
+        suppress_warnings=True,
+        seed=seed
     )
     
     # Move results to experiment directory
@@ -112,7 +133,8 @@ def main():
         mode="sparse",
         export_csv=True,
         export_compiled_results=True,
-        suppress_warnings=True
+        suppress_warnings=True,
+        seed=seed
     )
     
     # Move results to experiment directory

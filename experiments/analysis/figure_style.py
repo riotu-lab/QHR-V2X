@@ -27,6 +27,7 @@ from typing import NamedTuple
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -127,6 +128,52 @@ def load(mode: str) -> pd.DataFrame:
 
 def load_all() -> dict[str, pd.DataFrame]:
     return {mode: load(mode) for mode in MODES}
+
+
+# ------------------------------------------------------------------ line styles
+#
+# `straight`  join measured points with line segments. The default: nothing is
+#             drawn that was not measured.
+# `curved`    interpolate with a monotone cubic (PCHIP) for the smooth look of
+#             the published figures. PCHIP is used rather than a natural cubic
+#             spline because it cannot overshoot - with only five grid sizes per
+#             curve, a natural spline can bulge past the surrounding points and
+#             imply a peak or dip that was never measured. PCHIP stays within the
+#             data's own bounds between consecutive points.
+#
+# Under either style the markers sit on the measured values, so the real data
+# points remain visible and the line is only the connection between them.
+LINE_STYLES = ("straight", "curved")
+_CURVE_SAMPLES = 200
+
+
+def plot_measured(ax, x, y, *, color: str, marker: str, label: str,
+                  style: str = "straight", markersize: float = 3.5,
+                  linewidth: float = 1.1, alpha: float = 1.0):
+    """Draw one series. `style` selects segment joins or monotone-cubic smoothing."""
+    if style not in LINE_STYLES:
+        raise ValueError(f"unknown line style {style!r}; choose from {LINE_STYLES}")
+
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+
+    # PCHIP needs at least 3 distinct abscissae; fall back to segments otherwise.
+    if style == "curved" and len(x) >= 3:
+        from scipy.interpolate import PchipInterpolator
+
+        order = np.argsort(x)
+        xs, ys = x[order], y[order]
+        fine = np.linspace(xs[0], xs[-1], _CURVE_SAMPLES)
+        ax.plot(fine, PchipInterpolator(xs, ys)(fine), color=color,
+                linewidth=linewidth, alpha=alpha, zorder=2)
+        # Markers carry the label so the legend shows the marker, not a bare line.
+        return ax.plot(x, y, linestyle="none", marker=marker, color=color,
+                       markersize=markersize, label=label, markeredgewidth=0,
+                       alpha=alpha, zorder=3)
+
+    return ax.plot(x, y, marker=marker, color=color, markersize=markersize,
+                   linewidth=linewidth, label=label, markeredgewidth=0,
+                   alpha=alpha)
 
 
 def apply_axes_style(ax, xlabel: str, ylabel: str, *, base: float = 7.0) -> None:

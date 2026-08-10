@@ -24,6 +24,71 @@ from grover_quantum_bfs import grover_quantum_bfs
 from qhr_v2x import qhr_v2x, qhr_v2x_classical_baseline
 
 
+# Seed used for the grids behind the published figures. Passing this reproduces
+# the paper's exact numbers; by default a fresh seed is drawn per run.
+PAPER_SEED = 12345
+
+
+def resolve_seed(seed=None) -> int:
+    """
+    Resolve the RNG seed for a benchmark run.
+
+    `None` (the default) draws a fresh seed from system entropy, so successive
+    runs explore different obstacle layouts. The drawn value is returned and
+    recorded alongside the results, so any run can be replayed exactly by
+    passing it back in.
+
+    Accepts an int, the string "paper" for `PAPER_SEED`, or "random"/None.
+    """
+    if seed is None or seed == "random":
+        return int(np.random.SeedSequence().entropy % (2 ** 32))
+    if seed == "paper":
+        return PAPER_SEED
+    return int(seed)
+
+
+def build_grid(size: int, mode: str, seed: int) -> np.ndarray:
+    """
+    Construct one benchmark grid. True marks an obstacle.
+
+    Dense mode scatters obstacle blobs using `seed`. Sparse mode is deterministic
+    by construction - it writes a partial wall into column `size // 3` - so `seed`
+    does not affect it.
+    """
+    density = 0.4 if mode == "dense" else 0.2
+    grid = np.zeros((size, size), dtype=bool)
+    goal = (size - 1, size - 1)
+
+    if mode == "dense":
+        rng = np.random.default_rng(seed)
+        for _ in range(int(size * density)):
+            r, c = rng.integers(size), rng.integers(size)
+            if (r, c) != (0, 0) and (r, c) != goal:
+                grid[r, c] = True
+            for _ in range(4):
+                rr = r + rng.integers(-1, 2)
+                cc = c + rng.integers(-1, 2)
+                if 0 <= rr < size and 0 <= cc < size:
+                    if (rr, cc) != (0, 0) and (rr, cc) != goal:
+                        grid[rr, cc] = True
+    else:
+        width = int(np.ceil(size * density))
+        for r in range(size):
+            if r % 3 == 0:
+                start_col = max(0, r - width + 1)
+                end_col = r + 1
+                # Keep the start and goal columns traversable.
+                if start_col < size // 3 < end_col:
+                    if start_col < size // 3:
+                        grid[max(0, r - width + 1):size // 3, size // 3] = True
+                    if size // 3 + 1 < end_col:
+                        grid[size // 3 + 1:r + 1, size // 3] = True
+                else:
+                    grid[max(0, r - width + 1):r + 1, size // 3] = True
+
+    return grid
+
+
 def get_benchmark_output_dir(mode: str) -> str:
     """
     Centralized function to ensure ALL benchmark outputs go to the organized directory structure.
@@ -96,11 +161,17 @@ def run_all(
     suppress_warnings: bool = True,
     export_compiled_results: bool = True,
     csv_path: str = None,
-    compiled_path: str = None
+    compiled_path: str = None,
+    seed=None
 ) -> dict:
     """
     Run benchmarks and optionally export CSV and a compiled markdown results file,
     all organized under mode-specific folders.
+
+    Args:
+        seed: RNG seed for the dense obstacle layout. None (default) draws a
+            fresh seed per run; pass "paper" or 12345 for the published grids.
+            The resolved value is printed and written to the CSV.
 
     Returns a dict mapping algorithm -> metrics dict.
     """
@@ -108,6 +179,11 @@ def run_all(
         warnings.filterwarnings('ignore')
 
     assert mode in ["dense", "sparse"], "Mode must be 'dense' or 'sparse'"
+
+    run_seed = resolve_seed(seed)
+    origin = "paper" if run_seed == PAPER_SEED else ("fixed" if seed is not None else "random")
+    print(f"🎲 Seed: {run_seed} ({origin})"
+          + ("  — sparse mode is deterministic, seed unused" if mode == "sparse" else ""))
 
     # Setup directories under organized benchmarks structure
     base_dir = os.path.join("benchmarks", "results", f"benchmark_output_{mode}")
@@ -145,36 +221,7 @@ def run_all(
 
     # Benchmarking loop
     for size in sizes:
-        grid = np.zeros((size, size), dtype=bool)
-        if mode == "dense":
-            rng = np.random.default_rng(12345)
-            for _ in range(int(size * density)):
-                r, c = rng.integers(size), rng.integers(size)
-                # Ensure start and goal are not obstacles
-                if (r, c) != (0, 0) and (r, c) != (size-1, size-1):
-                    grid[r, c] = True
-                for _ in range(4):
-                    rr = r + rng.integers(-1, 2)
-                    cc = c + rng.integers(-1, 2)
-                    if 0 <= rr < size and 0 <= cc < size:
-                        # Ensure start and goal are not obstacles
-                        if (rr, cc) != (0, 0) and (rr, cc) != (size-1, size-1):
-                            grid[rr, cc] = True
-        else:
-            width = int(np.ceil(size * density))
-            for r in range(size):
-                if r % 3 == 0:
-                    # Ensure start and goal columns are not blocked
-                    start_col = max(0, r-width+1)
-                    end_col = r+1
-                    if start_col < size//3 < end_col:
-                        # Split the obstacle to avoid blocking start/goal
-                        if start_col < size//3:
-                            grid[max(0, r-width+1):size//3, size//3] = True
-                        if size//3+1 < end_col:
-                            grid[size//3+1:r+1, size//3] = True
-                    else:
-                        grid[max(0, r-width+1):r+1, size//3] = True
+        grid = build_grid(size, mode, run_seed)
         dest = (size-1, size-1)
 
         for name, func in sorted(config.items()):
@@ -207,6 +254,7 @@ def run_all(
                 rows.append({
                     "algorithm": algo,
                     "mode": mode,
+                    "seed": run_seed,
                     "grid_size": sz,
                     "msgs": data["msgs"][i],
                     "path_len": data["path_len"][i],
@@ -275,14 +323,18 @@ def run_selected_algorithms(
     suppress_warnings: bool = True,
     export_compiled_results: bool = True,
     csv_path: str = None,
-    compiled_path: str = None
+    compiled_path: str = None,
+    seed=None
 ) -> dict:
     """
     Run benchmarks with only selected algorithms.
-    
+
     Args:
         algorithms: List of algorithm names to test (e.g., ["dijkstra", "astar"])
         mode: "dense" or "sparse"
+        seed: RNG seed for the dense obstacle layout. None (default) draws a
+            fresh seed per run; pass "paper" or 12345 for the published grids.
+            The resolved value is printed and written to the CSV.
         ... (other params same as run_all)
     """
     if suppress_warnings:
@@ -311,7 +363,11 @@ def run_selected_algorithms(
     if not selected_config:
         raise ValueError(f"No valid algorithms found. Available: {list(valid_algorithms.keys())}")
     
+    run_seed = resolve_seed(seed)
+    origin = "paper" if run_seed == PAPER_SEED else ("fixed" if seed is not None else "random")
     print(f"🎯 Running benchmark with selected algorithms: {list(selected_config.keys())}")
+    print(f"🎲 Seed: {run_seed} ({origin})"
+          + ("  — sparse mode is deterministic, seed unused" if mode == "sparse" else ""))
 
     # Setup directories under organized benchmarks structure
     base_dir = os.path.join("benchmarks", "results", f"benchmark_output_{mode}")
@@ -335,36 +391,7 @@ def run_selected_algorithms(
 
     # Benchmarking loop (same logic as run_all but with selected_config)
     for size in sizes:
-        grid = np.zeros((size, size), dtype=bool)
-        if mode == "dense":
-            rng = np.random.default_rng(12345)
-            for _ in range(int(size * density)):
-                r, c = rng.integers(size), rng.integers(size)
-                # Ensure start and goal are not obstacles
-                if (r, c) != (0, 0) and (r, c) != (size-1, size-1):
-                    grid[r, c] = True
-                for _ in range(4):
-                    rr = r + rng.integers(-1, 2)
-                    cc = c + rng.integers(-1, 2)
-                    if 0 <= rr < size and 0 <= cc < size:
-                        # Ensure start and goal are not obstacles
-                        if (rr, cc) != (0, 0) and (rr, cc) != (size-1, size-1):
-                            grid[rr, cc] = True
-        else:
-            width = int(np.ceil(size * density))
-            for r in range(size):
-                if r % 3 == 0:
-                    # Ensure start and goal columns are not blocked
-                    start_col = max(0, r-width+1)
-                    end_col = r+1
-                    if start_col < size//3 < end_col:
-                        # Split the obstacle to avoid blocking start/goal
-                        if start_col < size//3:
-                            grid[max(0, r-width+1):size//3, size//3] = True
-                        if size//3+1 < end_col:
-                            grid[size//3+1:r+1, size//3] = True
-                    else:
-                        grid[max(0, r-width+1):r+1, size//3] = True
+        grid = build_grid(size, mode, run_seed)
         dest = (size-1, size-1)
 
         for name, func in sorted(selected_config.items()):
@@ -397,6 +424,7 @@ def run_selected_algorithms(
                 rows.append({
                     "algorithm": algo,
                     "mode": mode,
+                    "seed": run_seed,
                     "grid_size": sz,
                     "msgs": data["msgs"][i],
                     "path_len": data["path_len"][i],

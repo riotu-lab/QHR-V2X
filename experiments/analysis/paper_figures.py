@@ -33,9 +33,9 @@ import argparse
 
 import matplotlib.pyplot as plt
 
-from figure_style import (METRIC_BY_KEY, PALETTES, RESULTS, SERIES, TIME_MODELS,
-                          add_legend, apply_axes_style, estimated_time, load_all,
-                          rel, save)
+from figure_style import (LINE_STYLES, METRIC_BY_KEY, PALETTES, RESULTS, SERIES,
+                          TIME_MODELS, add_legend, apply_axes_style,
+                          estimated_time, load_all, plot_measured, rel, save)
 
 OUT = RESULTS / "paper_figures"
 
@@ -70,9 +70,11 @@ def y_label(metric_key: str, time_model: str) -> str:
     return METRIC_BY_KEY[metric_key].axis
 
 
-def draw(df, number: int, mode: str, metric_key: str, dpi: int, time_model: str):
+def draw(df, number: int, mode: str, metric_key: str, dpi: int, time_model: str,
+         line_style: str = "straight"):
     palette = PALETTES["paper"]
     suffix = "" if time_model == "messages" else f"_{time_model}"
+    suffix += "" if line_style == "straight" else f"_{line_style}"
 
     fig, ax = plt.subplots(figsize=(3.6, 2.7))
     for s in SERIES:
@@ -80,9 +82,9 @@ def draw(df, number: int, mode: str, metric_key: str, dpi: int, time_model: str)
         if sub.empty:
             print(f"  note: Fig. {number} - no rows for '{s.key}', series omitted")
             continue
-        ax.plot(sub.grid_size, series_values(sub, metric_key, time_model),
-                marker=s.marker, color=palette[s.key], markersize=3.5,
-                linewidth=1.1, label=s.label, markeredgewidth=0)
+        plot_measured(ax, sub.grid_size, series_values(sub, metric_key, time_model),
+                      color=palette[s.key], marker=s.marker, label=s.label,
+                      style=line_style)
 
     apply_axes_style(ax, "Grid Size", y_label(metric_key, time_model))
     add_legend(ax)
@@ -94,6 +96,10 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dpi", type=int, default=600, help="output resolution (default 600)")
+    ap.add_argument("--line-style", choices=sorted(LINE_STYLES), default="straight",
+                    help="how points are joined: 'straight' (default) draws only what "
+                         "was measured; 'curved' smooths with a monotone cubic (PCHIP), "
+                         "which matches the published figures and cannot overshoot.")
     ap.add_argument("--time-model", choices=sorted(TIME_MODELS), default="messages",
                     help="how Estimated RDT is derived: 'messages' (RDM x 0.001, the "
                          "published definition) or 'hops' (path length x per-hop delay). "
@@ -102,9 +108,11 @@ def main():
 
     frames = load_all()
 
-    print(f"Generating paper Figures 3-8  (estimated-RDT model: {args.time_model})\n")
+    print(f"Generating paper Figures 3-8  (estimated-RDT model: {args.time_model}, "
+          f"lines: {args.line_style})\n")
     for number, mode, metric_key, caption in FIGURES:
-        path = draw(frames[mode], number, mode, metric_key, args.dpi, args.time_model)
+        path = draw(frames[mode], number, mode, metric_key, args.dpi, args.time_model,
+                    args.line_style)
         print(f"  Fig. {number}  {caption}")
         print(f"            -> {rel(path)}")
 

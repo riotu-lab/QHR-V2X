@@ -20,6 +20,7 @@ help:
 	@echo "  make analyze     - Run statistical analysis"
 	@echo "  make figures     - Reproduce results, then generate paper Figures 3-8"
 	@echo "  make figures-all - Generate all 40 figures (6 paper + 34 others)"
+	@echo "                     add SEED=paper to use the published obstacle layout"
 	@echo "  make all         - Run complete research pipeline"
 	@echo ""
 	@echo "Utility Commands:"
@@ -44,9 +45,17 @@ test:
 # Reproduce paper results
 # Restricted to the three algorithms the paper compares, so the CSV that feeds
 # the figures contains exactly the published series.
+#
+# SEED is unset by default, so each run draws a fresh obstacle layout and the
+# seed it used is printed and written to the CSV. Override to replay a run:
+#   make reproduce SEED=paper     # the grids behind the published figures
+#   make reproduce SEED=12345     # any specific seed
+SEED ?=
+SEED_ARG = $(if $(SEED),--seed $(SEED),)
+
 reproduce:
 	@echo "🔬 Reproducing paper results..."
-	poetry run python experiments/scripts/reproduce_paper_results.py --algorithms qhr_v2x,astar,dijkstra
+	poetry run python experiments/scripts/reproduce_paper_results.py --algorithms qhr_v2x,astar,dijkstra $(SEED_ARG)
 	@echo "✅ Paper results reproduced!"
 
 # Statistical analysis

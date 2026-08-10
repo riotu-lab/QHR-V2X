@@ -93,13 +93,44 @@ hard-coded: every plotted point comes from a live call to the algorithm under te
 and `paper_figures.py` prints all plotted values so each point can be checked
 against the figure.
 
-Results are seeded, so `msgs` and `path_len` are identical on every run; measured
-`time_ms` varies with machine load, as expected.
+### Seeds
 
-> **Note on Figures 3, 4, 6 and 7.** The A* and Dijkstra series reproduce the
-> published values exactly, as do all three series in Figures 5 and 8. The QHR-V2X
-> series in Figures 3, 4, 6 and 7 does not match the published curve. See
-> [VERIFICATION.md](VERIFICATION.md) for the analysis.
+By default each run draws a **fresh** obstacle layout, so repeated runs explore
+different grids. The seed used is printed and written to the `seed` column of the
+results CSV, so any run can be replayed exactly:
+
+```bash
+make figures                    # fresh layout each time (default)
+make figures SEED=paper         # the grids behind the published figures
+make figures SEED=4102968646    # replay a specific earlier run
+```
+
+Sparse mode is deterministic by construction — its obstacles are a partial wall in
+column `size // 3` — so the seed only affects dense mode. With a fixed seed,
+`msgs` and `path_len` are identical across runs; measured `time_ms` still varies
+with machine load, as expected.
+
+### Line style
+
+```bash
+make figures                                                   # straight (default)
+python experiments/analysis/paper_figures.py --line-style curved
+```
+
+`straight` joins the measured points with segments, so nothing is drawn that was
+not measured. `curved` smooths with a monotone cubic (PCHIP) for the look of the
+published figures; PCHIP is used instead of a natural cubic spline because it
+cannot overshoot — with only five grid sizes per curve, a natural spline can bulge
+past the surrounding points and imply a peak that was never measured. Markers sit
+on the measured values under either style. Curved output gets a `_curved` suffix,
+so both can coexist.
+
+> **Reproduction status.** With `SEED=paper`, the A* and Dijkstra series reproduce
+> the published values exactly, and all three series in Figures 5 and 8 do too.
+> QHR-V2X is the lowest curve in Figures 3, 4, 6 and 7, matching the published
+> ordering. Its absolute values differ from the published ones — see
+> [VERIFICATION.md](VERIFICATION.md) §0 for what was fixed to get there, and
+> §2.4–2.6 for the Table 1 parameters still not implemented.
 
 ### 3. **Quick Testing**
 ```bash

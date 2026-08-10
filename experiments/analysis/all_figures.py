@@ -32,9 +32,9 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
-from figure_style import (METRICS, METRIC_BY_KEY, MODE_LABEL, MODES, PALETTES,
-                          RESULTS, SERIES, add_legend, apply_axes_style, load_all,
-                          rel, save)
+from figure_style import (LINE_STYLES, METRICS, METRIC_BY_KEY, MODE_LABEL, MODES,
+                          PALETTES, RESULTS, SERIES, add_legend, apply_axes_style,
+                          load_all, plot_measured, rel, save)
 
 OUT = RESULTS / "all_figures"
 
@@ -51,14 +51,17 @@ def note(path, description: str) -> None:
     manifest.append((rel(path), description))
 
 
+LINE_STYLE = "straight"   # set from --line-style in main()
+
+
 def _plot_series(ax, df, metric_key, palette, *, marker_size=3.5, line_width=1.1):
     for s in SERIES:
         sub = df[df.algorithm == s.key].sort_values("grid_size")
         if sub.empty:
             continue
-        ax.plot(sub.grid_size, sub[metric_key], marker=s.marker,
-                color=palette[s.key], markersize=marker_size,
-                linewidth=line_width, label=s.label, markeredgewidth=0)
+        plot_measured(ax, sub.grid_size, sub[metric_key], color=palette[s.key],
+                      marker=s.marker, label=s.label, style=LINE_STYLE,
+                      markersize=marker_size, linewidth=line_width)
 
 
 # --------------------------------------------------------------------------- line
@@ -160,9 +163,9 @@ def relative_figures(frames, dpi):
             sub = df[df.algorithm == s.key].sort_values("grid_size").set_index("grid_size")
             if sub.empty:
                 continue
-            ax.plot(sub.index, sub["msgs"] / base.reindex(sub.index), marker=s.marker,
-                    color=palette[s.key], markersize=3.5, linewidth=1.1,
-                    label=s.label, markeredgewidth=0)
+            plot_measured(ax, sub.index, sub["msgs"] / base.reindex(sub.index),
+                          color=palette[s.key], marker=s.marker, label=s.label,
+                          style=LINE_STYLE)
         ax.axhline(1.0, color="0.55", linewidth=0.7, linestyle="--", zorder=0)
         apply_axes_style(ax, "Grid Size", "RDM relative to A*  (x)")
         add_legend(ax)
@@ -200,7 +203,13 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dpi", type=int, default=600, help="output resolution (default 600)")
+    ap.add_argument("--line-style", choices=sorted(LINE_STYLES), default="straight",
+                    help="how points are joined: 'straight' (default) draws only what "
+                         "was measured; 'curved' smooths with a monotone cubic (PCHIP).")
     args = ap.parse_args()
+
+    global LINE_STYLE
+    LINE_STYLE = args.line_style
 
     frames = load_all()
 
