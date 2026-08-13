@@ -23,10 +23,19 @@ repository is drawn from stored numbers.
 poetry install      # Python 3.11, NumPy, Matplotlib, pandas, Qiskit, qiskit-aer
 ```
 
+Poetry is not required. Every `make` target invokes Python through `$(PY)`, which
+resolves to Poetry if installed, otherwise a project-local `.venv`, otherwise
+`python3` — so a plain virtual environment works:
+
+```bash
+uv venv --python 3.11 .venv        # or: python3.11 -m venv .venv
+uv pip install -r <(poetry export -f requirements.txt --without-hashes)
+make figures SEED=paper             # picks up .venv automatically
+```
+
 `./setup.sh` bootstraps the whole toolchain instead — it installs pyenv and
 Poetry from their upstream install scripts, pins Python 3.11.5 with `pyenv local`,
-then runs `poetry install`. Use it only if you want that; `poetry install` alone
-is enough on a machine that already has Python 3.11.
+then runs `poetry install`. Use it only if you want that.
 
 Qiskit is a hard requirement: `src/qhr_v2x.py` imports `qiskit` and `qiskit_aer`
 at module level. Only the `use_quantum=True` selection path actually executes a
@@ -45,10 +54,16 @@ Takes a few minutes. `SEED=paper` selects the obstacle layout behind the publish
 figures; add `STYLE=curved` for their smooth line style.
 
 ```bash
+make figures-nominal          # the same six figures at Table 1's stated parameters
 make figures-all SEED=paper   # the 6 above plus 34 further views of the same data
 make analyze                  # statistical summary
 make all                      # install, test, figures, analyze
 ```
+
+`make figures-nominal` is the counterpart to `make figures`: uniform random
+obstacles at exactly 20 % / 40 %, 20 independent seeds, one shared message counter.
+**It does not match the published figures** — that is the finding rather than a
+bug, and REPRODUCE.md §8 tabulates where the two disagree.
 
 `make figures` depends on `make reproduce`, so figures are never drawn from a
 stale CSV, and `paper_figures.py` prints every value it plots so each point can be
@@ -64,18 +79,34 @@ three algorithms match in Figures 5 and 8, and QHR-V2X is the lowest curve in
 Figures 3, 4, 6 and 7 as published — though its absolute values differ. Path
 optimality is verified against breadth-first search across 346 queries.
 
-Four divergences from the paper's Table 1 are known and documented with evidence
-in **[VERIFICATION.md](VERIFICATION.md)**:
+Divergences from the paper's Table 1 are documented with evidence in
+**[VERIFICATION.md](VERIFICATION.md)**.
 
-- the link-cost model of Eq. 2 (`α·d + β·τ + γ·(1−R)`) is not implemented — every
-  edge costs one hop, and link reliability, SNR, transmission range and the
-  mobility models of Eqs. 3–6 are absent;
+Unimplemented anywhere:
+
+- the link-cost model of Eq. 2 (`α·d + β·τ + γ·(1−R)`) — every edge costs one hop,
+  and link reliability, SNR, transmission range and the mobility models of
+  Eqs. 3–6 are absent (§2.4).
+
+Open in the `tests/` harness, corrected in `make figures-nominal`:
+
 - realised obstacle density is 1.6–12 %, not the stated 20 % and 40 %, and falls
-  as the grid grows;
+  as the grid grows (§2.5);
+- the sparse generator is not random at all — it writes a partial wall into the
+  single column `size // 3`, where Section IV-A specifies "20 % randomly
+  distributed obstacles" and "a unique realization... rather than a static
+  layout". Different seeds produce identical grids (§2.5);
 - results come from a single run per configuration, not 20 independent seeds, so
-  no variance is reported;
+  no variance is reported — and for sparse mode, seed variation would change
+  nothing (§2.6).
+
+The `tests/` harness is left uncorrected deliberately: it is what reproduces the
+published values, and fixing its density changes the published figures.
+
+Holds as measured:
+
 - Eq. 12 predicts a constant-factor reduction in expansions; the measured
-  reduction is real but grows with grid size, from 64 % to 96 %.
+  reduction is real but grows with grid size, from 64 % to 96 % (§2.3).
 
 ## Layout
 
@@ -124,12 +155,15 @@ for all three algorithms; see [VERIFICATION.md](VERIFICATION.md) §2.2.
 ## Exploring by hand
 
 ```bash
-poetry run python main.py help       # commands and the algorithm registry
-poetry run python main.py demo       # 5x5 grid, Dijkstra and A*, printed maps
-poetry run python main.py quantum    # smaller grid, the quantum-enhanced variants
-poetry run python main.py compare qhr_v2x qhr_v2x_classical
-poetry run python main.py selective dijkstra astar astar_quantum
+python main.py help       # commands and the algorithm registry
+python main.py demo       # 5x5 grid, Dijkstra and A*, printed maps
+python main.py quantum    # smaller grid, the quantum-enhanced variants
+python main.py compare qhr_v2x qhr_v2x_classical
+python main.py selective dijkstra astar astar_quantum
 ```
+
+Prefix with `poetry run` or use `.venv/bin/python`, depending on how you
+installed.
 
 This CLI is for inspection, not for the paper's numbers — those come from
 `make figures`. Benchmark output lands in `benchmarks/results/`.
