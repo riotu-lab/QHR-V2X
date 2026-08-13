@@ -32,7 +32,7 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
-from figure_style import (LINE_STYLES, METRICS, METRIC_BY_KEY, MODE_LABEL, MODES,
+from figure_style import (LINE_STYLES, METRICS, MODE_LABEL, MODES,
                           PALETTES, RESULTS, SERIES, add_legend, apply_axes_style,
                           load_all, plot_measured, rel, save)
 

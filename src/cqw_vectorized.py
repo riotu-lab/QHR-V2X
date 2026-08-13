@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import functools
 from collections import deque
 from typing import List, Tuple
 

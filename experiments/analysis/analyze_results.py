@@ -16,11 +16,8 @@ Features:
     - Export publication-ready figures
 """
 
-import os
-import sys
 import argparse
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
@@ -67,13 +64,13 @@ def statistical_analysis(df, metric='msgs'):
     groups = [df[df['algorithm'] == algo][metric].values for algo in algorithms]
     f_stat, p_value = stats.f_oneway(*groups)
     
-    print(f"\nANOVA Test:")
+    print("\nANOVA Test:")
     print(f"F-statistic: {f_stat:.4f}")
     print(f"P-value: {p_value:.4f}")
     print(f"Significant: {'Yes' if p_value < 0.05 else 'No'} (α = 0.05)")
     
     # Pairwise t-tests
-    print(f"\nPairwise T-tests (Bonferroni corrected):")
+    print("\nPairwise T-tests (Bonferroni corrected):")
     from itertools import combinations
     
     n_comparisons = len(list(combinations(algorithms, 2)))
@@ -198,7 +195,7 @@ def create_statistical_summary(results, output_dir):
                 groups = [df[df['algorithm'] == algo][metric].values for algo in algorithms]
                 f_stat, p_value = stats.f_oneway(*groups)
                 
-                f.write(f"**ANOVA Test:**\n")
+                f.write("**ANOVA Test:**\n")
                 f.write(f"- F-statistic: {f_stat:.4f}\n")
                 f.write(f"- P-value: {p_value:.4f}\n")
                 f.write(f"- Significant difference: {'Yes' if p_value < 0.05 else 'No'}\n\n")

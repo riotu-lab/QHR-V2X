@@ -7,7 +7,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 import sys
-import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from dijkstra_grid_u import dijkstra_grid
@@ -198,7 +197,6 @@ def run_all(
 
     # Grid sizes & density
     sizes = [10, 25, 50, 75, 100] if mode == "dense" else [10, 20, 30, 40, 50]
-    density = 0.4 if mode == "dense" else 0.2
     time_complexity_factor = 0.001
 
     # Algorithm registry
@@ -382,7 +380,6 @@ def run_selected_algorithms(
 
     # Grid sizes & density
     sizes = [10, 25, 50, 75, 100] if mode == "dense" else [10, 20, 30, 40, 50]
-    density = 0.4 if mode == "dense" else 0.2
     time_complexity_factor = 0.001
 
     # Initialize results structure for selected algorithms only

@@ -7,9 +7,7 @@ from math import ceil, log2
 from typing import List, Tuple
 
 import numpy as np
-from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
-from qiskit.exceptions import QiskitError
 
 # Silence noisy deprecation chatter from Qiskit during CI runs
 warnings.filterwarnings("ignore", category=PendingDeprecationWarning)

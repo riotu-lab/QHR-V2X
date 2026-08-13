@@ -20,7 +20,6 @@ Examples:
     python experiments/scripts/reproduce_paper_results.py --output-dir experiments/results/paper_reproduction
 """
 
-import os
 import sys
 import argparse
 import time
