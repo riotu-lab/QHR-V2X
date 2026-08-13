@@ -1,441 +1,168 @@
-# 🚀 Pathfinding Algorithm Comparison Project
+# QHR-V2X
 
-**A comprehensive comparison of classical and quantum-enhanced pathfinding algorithms for grid-based navigation.**
+Reference implementation and reproduction artifact for:
 
-> **📄 Paper Alignment**: This project implements and validates the algorithms described in **"QHR-V2X: A Quantum-Heuristic Routing Framework for Efficient V2X Path Discovery"** by Khan et al. (Prince Sultan University, 2024).
+> **QHR-V2X: A Quantum-Heuristic Routing Framework for Efficient V2X Path Discovery**
+> Zahid Khan, Sultan Almogbil, Muhammad Babar, Adel Ammar, and Wadii Boulila
+> Robotics and Internet-of-Things (RIOTU) Laboratory, Prince Sultan University
+> *IEEE Open Journal of the Communications Society*, vol. 7, 2026, pp. 211–220.
+> [doi:10.1109/OJCOMS.2025.3644144](https://doi.org/10.1109/OJCOMS.2025.3644144)
 
-## 📖 What This Project Does
+QHR-V2X biases A* node selection with quantum amplitude amplification (Eqs. 9–11),
+optionally routing the selection through a Grover circuit on the Qiskit
+AerSimulator. This repository contains that algorithm, the classical baselines it
+is measured against, the benchmark harness, the figure pipeline behind Figures
+3–8, and a verification report on what does and does not reproduce.
 
-This project implements and compares **9 different pathfinding algorithms** on grid-based maps:
+Everything here runs the routing algorithms and measures them. No figure in this
+repository is drawn from stored numbers.
 
-### 🔧 **Classical Algorithms** (Fast & Reliable)
-- **Dijkstra's Algorithm** - Finds the shortest path between two points
-- **A* Search** - Smart search that uses heuristics to find paths faster
-- **Grover Classic** - Classical implementation of Grover's quantum algorithm
-
-### 🔬 **Quantum-Enhanced Algorithms** (Research & Future)
-- **QHR-V2X** - Quantum-Heuristic Routing for V2X (main paper contribution)
-- **QHR-V2X Classical** - Classical baseline for QHR-V2X comparison
-- **Quantum Dijkstra** - Quantum-enhanced version of Dijkstra
-- **Quantum A*** - Quantum-enhanced A* search
-- **Continuous Quantum Walk (CQW)** - Uses quantum mechanics for pathfinding
-- **Vectorized CQW** - Optimized version of quantum walk
-- **Quantum Grover BFS** - Quantum-enhanced breadth-first search
-
-## 🎯 What Problem Does This Solve?
-
-Imagine you have a **grid map** (like a video game world) with:
-- 🟢 **Start point** (where you are)
-- 🟡 **Goal point** (where you want to go)
-- ⬛ **Obstacles** (walls, trees, enemies blocking the way)
-
-**The algorithms find the best path from start to goal while avoiding obstacles.**
-
-## 📄 **Research Paper Implementation**
-
-This project implements the **QHR-V2X (Quantum-Heuristic Routing for V2X)** framework described in the research paper:
-
-> **"QHR-V2X: A Quantum-Heuristic Routing Framework for Efficient V2X Path Discovery"**  
-> *Zahid Khan, Sultan Almogbil, Muhammad Babar, Adel Ammar, and Wadii Boulila*  
-> *Robotics and Internet-of-Things (RIOTU) Laboratory, Prince Sultan University*
-
-### **Implemented**
-- ✅ **Grid-based route discovery** in sparse and dense topologies
-- ✅ **Grid sizes**: 10×10 to 100×100, as in the paper
-- ✅ **Metrics**: Route Discovery Time (RDT), Route Discovery Messages (RDM), Path Length (PL)
-- ✅ **Amplitude amplification** (Eqs. 9–11) biasing A* node selection, with an
-  optional Grover circuit on the Qiskit AerSimulator
-- ✅ **Classical baselines**: Dijkstra and A*
-- ✅ **Python 3.11 + Qiskit**, as in the paper
-- ✅ **Benchmark harness** with CSV export, 40 generated figures, seeded replay
-
-### **Not yet implemented — see [VERIFICATION.md](VERIFICATION.md)**
-- ⚠️ **Obstacle density**: the generators realise 1.6–12% obstacles, not the 20%
-  and 40% stated in Table 1, and the density falls as the grid grows
-- ⚠️ **Link-cost model** of Eq. 2 (`α·d + β·τ + γ·(1−R)`): every edge costs one
-  hop; link reliability, SNR, transmission range and the mobility models of
-  Eqs. 3–6 are absent
-- ⚠️ **Repetitions**: one run per configuration, not Table 1's 20 independent
-  seeds, so no variance is reported
-
-## 🚀 Quick Start (5 minutes to running!)
-
-### 1. **Install & Setup**
-```bash
-# Using Poetry (recommended)
-poetry install
-
-# Or using the setup script
-./setup.sh
-```
-
-### 2. **Reproduce Paper Results**
-```bash
-# Paper Figures 3-8, from a clean checkout, in one command.
-# Runs the algorithms, writes the CSVs, then draws the figures.
-make figures
-
-# Complete pipeline (install, tests, figures, statistical analysis)
-make all
-
-# Or step by step
-make reproduce    # Run the algorithms and export benchmark CSVs
-make figures      # Reproduce, then generate paper Figures 3-8
-make analyze      # Run statistical analysis
-```
-
-**Where the figures land:** `experiments/results/paper_figures/Figure_{3..8}_*.png`
-
-For every other view of the same data — log scales, bar charts, per-mode overview
-panels, overhead relative to A*, and a colour-vision-safe palette — run:
+## Install
 
 ```bash
-make figures-all   # 40 figures total: the 6 above + 34 more
+poetry install      # Python 3.11, NumPy, Matplotlib, pandas, Qiskit, qiskit-aer
 ```
 
-These land in `experiments/results/all_figures/`, alongside a generated
-`MANIFEST.md` describing every file. That directory is not tracked — it is rebuilt
-from the algorithms on each run.
+`./setup.sh` bootstraps the whole toolchain instead — it installs pyenv and
+Poetry from their upstream install scripts, pins Python 3.11.5 with `pyenv local`,
+then runs `poetry install`. Use it only if you want that; `poetry install` alone
+is enough on a machine that already has Python 3.11.
 
-`make figures` depends on `make reproduce`, so the figures are always drawn from a
-fresh benchmark run rather than a stale CSV. `make clean` removes every generated
-artifact, including `benchmarks/results/`. Nothing in the figure pipeline is
-hard-coded: every plotted point comes from a live call to the algorithm under test,
-and `paper_figures.py` prints all plotted values so each point can be checked
-against the figure.
+Qiskit is a hard requirement: `src/qhr_v2x.py` imports `qiskit` and `qiskit_aer`
+at module level. Only the `use_quantum=True` selection path actually executes a
+circuit, and a `QiskitError` there falls back to classical selection — but the
+import must succeed either way.
 
-### Seeds
-
-By default each run draws a **fresh** obstacle layout, so repeated runs explore
-different grids. The seed used is printed and written to the `seed` column of the
-results CSV, so any run can be replayed exactly:
+## Reproduce the paper's figures
 
 ```bash
-make figures                    # fresh layout each time (default)
-make figures SEED=paper         # the grids behind the published figures
-make figures SEED=4102968646    # replay a specific earlier run
+make figures SEED=paper
 ```
 
-Sparse mode is deterministic by construction — its obstacles are a partial wall in
-column `size // 3` — so the seed only affects dense mode. With a fixed seed,
-`msgs` and `path_len` are identical across runs; measured `time_ms` still varies
-with machine load, as expected.
-
-### Line style
+Runs the three algorithms across every grid size in both topologies, writes the
+benchmark CSVs, then draws Figures 3–8 into `experiments/results/paper_figures/`.
+Takes a few minutes. `SEED=paper` selects the obstacle layout behind the published
+figures; add `STYLE=curved` for their smooth line style.
 
 ```bash
-make figures                    # straight (default)
-make figures STYLE=curved       # smooth, matching the published figures
+make figures-all SEED=paper   # the 6 above plus 34 further views of the same data
+make analyze                  # statistical summary
+make all                      # install, test, figures, analyze
 ```
 
-`SEED` and `STYLE` combine freely:
+`make figures` depends on `make reproduce`, so figures are never drawn from a
+stale CSV, and `paper_figures.py` prints every value it plots so each point can be
+checked against the image.
+
+**[REPRODUCE.md](REPRODUCE.md)** covers the seed and line-style options, how to
+confirm the algorithms really run, and what is committed versus generated.
+
+## What reproduces, and what does not
+
+With `SEED=paper`, A* and Dijkstra reproduce the published values exactly, all
+three algorithms match in Figures 5 and 8, and QHR-V2X is the lowest curve in
+Figures 3, 4, 6 and 7 as published — though its absolute values differ. Path
+optimality is verified against breadth-first search across 346 queries.
+
+Four divergences from the paper's Table 1 are known and documented with evidence
+in **[VERIFICATION.md](VERIFICATION.md)**:
+
+- the link-cost model of Eq. 2 (`α·d + β·τ + γ·(1−R)`) is not implemented — every
+  edge costs one hop, and link reliability, SNR, transmission range and the
+  mobility models of Eqs. 3–6 are absent;
+- realised obstacle density is 1.6–12 %, not the stated 20 % and 40 %, and falls
+  as the grid grows;
+- results come from a single run per configuration, not 20 independent seeds, so
+  no variance is reported;
+- Eq. 12 predicts a constant-factor reduction in expansions; the measured
+  reduction is real but grows with grid size, from 64 % to 96 %.
+
+## Layout
+
+```
+src/                        algorithm implementations; qhr_v2x.py is the contribution
+tests/                      benchmark harness and grid construction
+main.py                     optional CLI for exploring the algorithms by hand
+examples/                   standalone qiskit-aer smoke test
+experiments/scripts/        reproduce_paper_results.py  — runs the benchmark
+                            generate_comparison_charts.py — the 20-seed run
+experiments/analysis/       figure generation and statistical analysis
+experiments/results/        measured CSVs, and generated figures (see REPRODUCE.md §7)
+REPRODUCE.md                how to reproduce the figures, and the two figure sets
+VERIFICATION.md             what reproduces, what does not, and the evidence
+```
+
+**No figure is committed** — every chart is drawn from a live run, so `make
+figures SEED=paper` and `make figures-nominal` produce them on demand. What *is*
+committed is the measured CSVs under `experiments/results/`, which carry the
+numbers behind every claim in VERIFICATION.md. REPRODUCE.md §7 lists the policy
+per directory.
+
+## The algorithms
+
+| Module | Algorithm |
+| --- | --- |
+| `src/qhr_v2x.py` | QHR-V2X — the paper's contribution, plus its classical baseline |
+| `src/dijkstra_grid_u.py` | Dijkstra |
+| `src/astar_u.py` | A* |
+| `src/astar_u_quantum.py` | A*, quantum-enhanced selection |
+| `src/dijkstra_quantum_enhanced.py` | Dijkstra, quantum-enhanced selection |
+| `src/grover_classic.py` | Classical simulation of Grover selection |
+| `src/grover_quantum_bfs.py` | Grover-assisted BFS on the AerSimulator |
+| `src/cqw_quantum.py` | Continuous quantum walk |
+| `src/cqw_vectorized.py` | Vectorized continuous quantum walk |
+
+Figures 3–8 compare the first three; the rest are additional implementations
+carried by the harness.
+
+Grids are NumPy boolean arrays (`True` = obstacle) with 4-connectivity and
+`(row, col)` coordinates from `(0, 0)`. Every algorithm returns
+`(path, messages)`, where `path` is a list of coordinates and `messages` is the
+route-discovery message count — one per frontier expansion, counted identically
+for all three algorithms; see [VERIFICATION.md](VERIFICATION.md) §2.2.
+
+## Exploring by hand
 
 ```bash
-make figures SEED=paper STYLE=curved   # closest to the published figures
-make figures-all SEED=paper            # all 40, published layout, straight
-```
-
-`straight` joins the measured points with segments, so nothing is drawn that was
-not measured. `curved` smooths with a monotone cubic (PCHIP) for the look of the
-published figures; PCHIP is used instead of a natural cubic spline because it
-cannot overshoot — with only five grid sizes per curve, a natural spline can bulge
-past the surrounding points and imply a peak that was never measured. Markers sit
-on the measured values under either style. Curved output gets a `_curved` suffix,
-so both can coexist.
-
-> **Reproduction status.** With `SEED=paper`, the A* and Dijkstra series reproduce
-> the published values exactly, and all three series in Figures 5 and 8 do too.
-> QHR-V2X is the lowest curve in Figures 3, 4, 6 and 7, matching the published
-> ordering. Its absolute values differ from the published ones — see
-> [VERIFICATION.md](VERIFICATION.md) §0 for what was fixed to get there, and
-> §2.4–2.6 for the Table 1 parameters still not implemented.
-
-### 3. **Quick Testing**
-```bash
-poetry run python main.py help      # See all available commands
-poetry run python main.py demo      # Try a simple example
-poetry run python main.py test      # Test basic algorithms
-poetry run python main.py quantum   # Test quantum algorithms
-poetry run python main.py benchmark # Run full performance tests
-```
-
-## 📁 Project Structure Explained
-
-```
-QHR-V2X/
-├── 📁 src/                           # 🧠 Algorithm implementations (9 files)
-│   ├── dijkstra_grid_u.py           # Classic shortest path
-│   ├── astar_u.py                   # Smart A* search
-│   ├── grover_classic.py            # Classical Grover
-│   ├── qhr_v2x.py                   # QHR-V2X (main paper contribution)
-│   ├── dijkstra_quantum_enhanced.py # Quantum Dijkstra
-│   ├── astar_u_quantum.py          # Quantum A*
-│   ├── cqw_quantum.py              # Quantum walk
-│   ├── cqw_vectorized.py           # Fast quantum walk
-│   └── grover_quantum_bfs.py       # Quantum BFS
-├── 📁 tests/                         # 🧪 Testing and benchmarking (2 files)
-│   ├── test_pathfinding_all.py     # Full benchmark suite
-│   └── test_pathfinding_modes.py   # Different test modes
-├── 📁 experiments/                   # 🔬 Research pipeline
-│   ├── 📁 analysis/                 # Statistical analysis
-│   │   ├── analyze_results.py      # Analysis script
-│   │   └── results/                # Generated figures & analysis
-│   ├── 📁 results/                  # Experimental data
-│   │   └── paper_reproduction/     # Paper reproduction results
-│   └── 📁 scripts/                  # Reproduction scripts
-│       └── reproduce_paper_results.py # Main reproduction script
-├── 📄 main.py                        # 🚀 Main project entry point
-├── 📄 Makefile                       # 🛠️ Automation commands
-├── 📄 setup.sh                       # 🔧 Installation script
-├── 📄 CITATION.cff                   # 📖 Citation metadata
-├── 📄 LICENSE                        # ⚖️ MIT License
-├── 📄 REPRODUCE.md                   # 🔬 How to reproduce the figures
-├── 📄 VERIFICATION.md                # 🔍 What reproduces, and what does not
-├── 📄 pyproject.toml                 # 📦 Poetry dependencies
-├── 📄 poetry.lock                    # 🔒 Locked dependency versions
-└── 📄 README.md                      # 📚 This file
-```
-
-## 🎮 How to Use (Step by Step)
-
-### **Option 1: Simple Demo (Recommended for first time)**
-```bash
-poetry run python main.py demo
-```
-**What happens:** Creates a small 8x8 grid, shows you the map, and runs 3 algorithms to find a path.
-
-### **Option 2: Test Basic Algorithms**
-```bash
-poetry run python main.py test
-```
-**What happens:** Tests Dijkstra and A* on a 5x5 grid, shows you the path found and how many "messages" were sent.
-
-### **Option 3: Test Quantum Algorithms**
-```bash
-poetry run python main.py quantum
-```
-**What happens:** Tests quantum algorithms on a 4x4 grid. Note: These may be slower on regular computers.
-
-### **Option 4: Full Benchmarking**
-```bash
-poetry run python main.py benchmark
-```
-**What happens:** Runs all algorithms on grids from 10x10 to 100x100, generates performance reports, CSV files, and charts.
-
-### **Option 5: Selective Benchmarking (Recommended)**
-```bash
+poetry run python main.py help       # commands and the algorithm registry
+poetry run python main.py demo       # 5x5 grid, Dijkstra and A*, printed maps
+poetry run python main.py quantum    # smaller grid, the quantum-enhanced variants
+poetry run python main.py compare qhr_v2x qhr_v2x_classical
 poetry run python main.py selective dijkstra astar astar_quantum
 ```
-Or shortcut via Poetry:
+
+This CLI is for inspection, not for the paper's numbers — those come from
+`make figures`. Benchmark output lands in `benchmarks/results/`.
+
+Three environment variables tune the quantum-walk simulator:
+
 ```bash
-poetry run bench-select dijkstra astar astar_quantum
+export CQW_MAX_QPOS=20        # maximum position qubits
+export CQW_SHOT_CAP=256       # maximum simulator shots
+export CQW_LOG_LEVEL=WARNING  # logging level
 ```
 
-### **Option 6: One-shot Pipeline (Clean → Run → PDF)**
-```bash
-# Run paper reproduction pipeline
-poetry run python experiments/scripts/reproduce_paper_results.py
-```
-This reproduces all experimental results and generates comprehensive analysis under `experiments/analysis/results/`.
+## Benchmark configuration
 
-## 🔍 Understanding the Output
+Dense mode runs 10×10, 25×25, 50×50, 75×75 and 100×100; sparse mode runs 10×10
+through 50×50 in steps of 10. Dense obstacles are randomly seeded; sparse
+obstacles are a deterministic partial wall in column `size // 3`, so `SEED`
+affects dense mode only. The nominal densities are 40 % and 20 % — see
+VERIFICATION.md §2.5 for what is actually realised.
 
-### **Grid Visualization**
-```
-S . . . . . . . G    S = Start point
-. . █ . . . . . .    G = Goal point  
-. . . . █ . . . .    █ = Obstacle
-. . . . . . . . .    . = Free space
-. . █ . . . . . .    * = Path found
-. . . . . . . . .
-. . . . . . . . .
-. . . . . . . . .
-```
+Measured per run: route discovery time (RDT), route discovery messages (RDM),
+path length (PL), node expansions, and wall-clock time.
 
-### **Algorithm Results**
-```
-✅ Dijkstra: Path found! Length: 12, Messages: 45
-   Path: [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (7, 1), (7, 2), (7, 3), (7, 4), (7, 5), (7, 6), (7, 7)]
-```
+## Requirements
 
-**What this means:**
-- **Length: 12** = Path has 12 steps (excluding start)
-- **Messages: 45** = Algorithm sent 45 internal messages
-- **Path** = List of coordinates from start to goal
+Python 3.11 (the published results were produced on 3.11.5) and 8 GB RAM for the
+100×100 grids. If `poetry install` leaves something missing, `poetry install --sync`
+reinstalls from the lockfile. The Qiskit versions are pinned to those the published
+figures were generated with; see REPRODUCE.md §7.
 
-## 📊 Benchmarking Explained
+## License
 
-### **What Gets Tested**
-- **Grid Sizes**: 10x10, 20x20, 30x30, 40x40, 50x50, 60x60, 70x70, 80x80, 90x90, 100x100
-- **Density Modes**:
-  - **Dense**: 40% obstacles (harder to find paths)
-  - **Sparse**: 20% obstacles (easier to find paths)
-
-### **What Gets Measured**
-- **Messages**: How many internal communications
-- **Path Length**: How long the found path is
-- **Execution Time**: How long the algorithm takes
-- **Complexity Estimate**: Theoretical performance
-
-### **Output Files**
-- **CSV files**: Raw data for analysis (organized in `experiments/results/`)
-- **PNG charts**: Visual comparisons (organized in `experiments/analysis/results/`)
-- **Markdown reports**: Summary of results (organized in `experiments/analysis/results/`)
-- **Statistical analysis**: Complete analysis reports (generated in `experiments/analysis/results/`)
-
-**All results are automatically organized in the proper directories - no more messy root folder!**
-
-## 🔬 Quantum Computing Notes
-
-### **What You Need to Know**
-- **Qiskit**: IBM's quantum computing framework
-- **Qiskit-Aer**: Quantum circuit simulator (runs on your computer)
-- **Simulation**: We're running quantum algorithms on regular computers (simulating quantum behavior)
-- **Performance**: Quantum algorithms may be slower on classical hardware due to simulation overhead
-- **Research**: These demonstrate theoretical advantages for future quantum computers
-
-### **📚 Learning Qiskit-Aer**
-
-**New to quantum computing or qiskit-aer?** We've created comprehensive guides:
-
-- **[examples/qiskit_aer_example.py](examples/qiskit_aer_example.py)** - Runnable example demonstrating quantum pathfinding
-
-**Quick Installation:**
-```bash
-pip install qiskit-aer
-# or
-poetry add qiskit-aer
-```
-
-**Test your installation:**
-```bash
-poetry run python examples/qiskit_aer_example.py
-```
-
-### **Environment Variables**
-```bash
-export CQW_MAX_QPOS=20      # Maximum position qubits
-export CQW_SHOT_CAP=256     # Maximum simulator shots
-export CQW_LOG_LEVEL=WARNING # Logging level
-```
-
-## 🐛 Troubleshooting
-
-### **Common Issues & Solutions**
-
-#### 1. **"No module named 'numpy'"**
-```bash
-poetry install
-```
-
-#### 2. **"Import error"**
-Make sure you're running from the project directory:
-```bash
-cd pathfinding-algorithms
-poetry run python main.py help
-```
-
-#### 3. **"Qiskit not found"**
-```bash
-poetry install
-```
-
-#### 4. **"Start or goal on obstacle"**
-This means the random obstacle generation blocked the start/goal. The algorithms handle this automatically.
-
-### **Performance Tips**
-- **Small grids** (< 20x20): All algorithms work well
-- **Medium grids** (20x20 - 50x50): Classical algorithms are fastest
-- **Large grids** (> 50x50): Consider using classical algorithms for practical use
-- **Quantum algorithms**: Best for research and understanding quantum concepts
-
-## 🏗️ **Project Organization (NEW!)**
-
-### **Professional Structure**
-This project now follows **industry-standard organization**:
-- **Clean root directory** - No more scattered files
-- **Logical grouping** - Related files are together
-- **Easy navigation** - Know exactly where to find anything
-- **Scalable design** - Easy to add new features
-
-### **Directory Purposes**
-- **`src/`** - All algorithm implementations
-- **`tests/`** - Testing and validation framework
-- **`experiments/`** - Complete research pipeline with analysis
-
-## 🎓 Learning Path
-
-### **Beginner (Start Here)**
-1. `python main.py demo` - See how it works
-2. `python main.py test` - Understand basic algorithms
-3. Read the grid visualization output
-
-### **Intermediate**
-1. `python main.py quantum` - Explore quantum algorithms
-2. Look at the source code in `src/` folder
-3. Understand how different algorithms work
-
-### **Advanced**
-1. `python main.py benchmark` - Run full performance tests
-2. Analyze the CSV results and charts
-3. Modify algorithms in `src/` folder
-4. Create your own test scenarios
-
-## 🔧 Technical Details
-
-### **Grid Representation**
-- **NumPy arrays**: `True` = obstacle, `False` = free space
-- **4-connectivity**: Only move up, down, left, right (no diagonals)
-- **Coordinates**: (row, column) starting from (0, 0)
-
-### **Algorithm Complexity**
-- **Dijkstra**: O(V²) where V = number of vertices
-- **A***: O(V log V) with admissible heuristic
-- **Quantum**: Theoretical O(√N) for certain problem classes
-
-### **File Formats**
-- **Input**: NumPy boolean arrays
-- **Output**: Tuple of (path, messages)
-- **Path**: List of (row, col) coordinates
-- **Messages**: Integer count of internal communications
-
-## 🤝 Contributing
-
-This is a research project demonstrating various pathfinding approaches. Feel free to:
-- Experiment with different grid sizes
-- Modify algorithm parameters
-- Add new test scenarios
-- Improve the visualization
-
-## 📄 License
-
-This appears to be academic/research work. Please check with the original authors for licensing information.
-
-## 🆘 Getting Help
-
-### **If Something Goes Wrong**
-1. Check the troubleshooting section above
-2. Make sure all dependencies are installed
-3. Verify you're in the correct directory
-4. Look at the error messages for clues
-
-### **For More Information**
-- Read the source code in the `src/` folder
-- Check the experimental results in the `experiments/` folder
-- Look at the test outputs for debugging information
-
----
-
-## 🎉 **You're Ready to Go!**
-
-**Start with:** `poetry run python main.py demo`
-
-**This will show you exactly how the pathfinding algorithms work on a real example!**
-
-**The project is now clean, organized, and follows modern Python conventions with Poetry dependency management!** 🚀
-
-## 🐍 **Python Version Requirement**
-**This project requires Python 3.11.5** for optimal performance and modern features.
+MIT — see [LICENSE](LICENSE).
 
 ## Citation
 
@@ -452,5 +179,4 @@ This appears to be academic/research work. Please check with the original author
 }
 ```
 
-Machine-readable metadata is in [`CITATION.cff`](CITATION.cff); GitHub renders it
-as "Cite this repository".
+Machine-readable metadata is in [CITATION.cff](CITATION.cff).

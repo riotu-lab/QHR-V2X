@@ -36,8 +36,17 @@ QHR-V2X is now the lowest curve in Figures 3, 4, 6 and 7, matching the published
 ordering, and path lengths remain identical across all three algorithms
 (Figures 5 and 8 unaffected).
 
-**Still open:** §2.4 (link-cost model of Eq. 2), §2.5 (obstacle densities),
-§2.6 (single run rather than 20 seeds).
+**Still open:** §2.4 (link-cost model of Eq. 2).
+
+**Open in the `tests/` harness, addressed elsewhere:** §2.5 (obstacle densities)
+and §2.6 (single run rather than 20 seeds). Both are implemented correctly in
+`experiments/scripts/generate_comparison_charts.py` — uniform random obstacles at
+exactly 20% / 40%, 20 independent seeds, endpoints from the largest connected
+component — reachable as `make figures-nominal`, with output in
+`experiments/results/figures/`. They remain unfixed in the `tests/` harness
+deliberately: that harness is what reproduces the published values, and correcting
+its density changes the published figures. The two configurations and the numbers
+they disagree on are tabulated in REPRODUCE.md §8.
 
 **Important qualification — see §2.9.** The reduction above is conditional. It
 holds on the repository's near-empty grids traversed toward the high-index
@@ -173,6 +182,22 @@ instead builds a literal Grover circuit, a different mechanism, which then never
 runs (§2.1). Eq. 12 is consequently untested: with no `η`, there is no value to
 substitute.
 
+**Why the rule could not be argmax over Eqs. 9–11 alone.** Taken literally,
+Algorithm 1 step 4 selects the candidate with the highest amplified probability —
+and that is always the candidate A* would select, so the two algorithms would be
+identical by construction. Eq. 9 gives `P_i ∝ exp(−f_i / T)`, so the lowest-`f`
+candidate starts highest. Eq. 10 multiplies below-average candidates by `(1 + η)`
+and the rest by `(1 − η)`; the lowest cost is always below average, so it takes
+the larger factor. Eq. 11 rescales by a positive constant, preserving order. The
+maximum therefore sits on the lowest-`f` candidate for *any* `T`, *any* `η`, and
+any number of amplification rounds. This was confirmed empirically before the
+rewrite: identical message counts and identical expansions at every grid size in
+both densities, with an expansion ratio of 1.0000 where Eq. 12 anticipates
+`1 − η` = 0.70. The implementation therefore expresses the amplification through
+the remaining-distance estimate `h`, so that it discriminates *within* an
+f-plateau — where A* itself is indifferent — rather than reproducing A*'s
+ordering.
+
 **On Eq. 12, with the mechanism now implemented.** The measured reduction against
 the no-amplification ablation is 64.1% / 81.7% / 93.5% / 95.4% / 95.9% across the
 five dense grids. `N'_e ≈ (1-η)·N_e` with a *fixed* `η` predicts a constant factor,
@@ -211,12 +236,31 @@ intended sweep. The sparse generator is not random at all: it writes obstacles i
 the **single column** `size//3`, giving a partial wall rather than "20% randomly
 distributed obstacles".
 
+**What Section IV-A specifies**, quoted rather than paraphrased:
+
+> "**Sparse mode:** Grid sizes ranging from 10 × 10 to 50 × 50 with 20% *randomly
+> distributed* obstacles representing blocked intersections or buildings."
+
+> "the topology itself evolves dynamically during each simulation run. Node
+> positions, vehicle speeds, inter-vehicle distances, and link reliabilities are
+> regenerated at each iteration... This ensures that each run represents a unique
+> realization of the dynamic V2X environment *rather than a static layout*."
+
+The sparse generator produces precisely a static layout. `build_grid(50,
+"sparse", seed=1)` and `build_grid(50, "sparse", seed=987654321)` return
+byte-identical arrays; every obstacle lies in column 16. The realised coverage is
+6.00% at 10×10 falling to 1.92% at 50×50, so the deviation is roughly a factor of
+ten as well as a change of obstacle model.
+
 ### 2.6 The experimental protocol differs from Table 1
 
-Table 1 specifies 20 independent runs with distinct random seeds, 300 s of simulated
-time per run, and averaged results. The harness runs each grid **once** with a fixed
-seed (`np.random.default_rng(12345)`) and averages over the `size` start rows
-`(row, 0) → (size-1, size-1)`. There is no repetition, no seed variation, no
+Section IV-A states that "each experiment runs for 300 s of simulated time and is
+repeated across **20 independent runs using distinct random seeds** to ensure
+statistical validity and reproducibility." The harness runs each grid **once** with
+a fixed seed (`np.random.default_rng(12345)`) and averages over the `size` start
+rows `(row, 0) → (size-1, size-1)`. For sparse mode the 20 runs are not merely
+absent but unattainable: distinct seeds produce identical grids (§2.5), so
+repetition there would yield 20 copies of one result. There is no repetition, no seed variation, no
 simulated-time dimension, and therefore no variance estimate behind any published
 point. There is also no mobility or link-failure loop, so the "localized re-routing
 on link failure or obstacle update" branch of Algorithm 1 has no trigger and is not
@@ -345,8 +389,7 @@ f-plateau, and with it the size of A*'s tie-breaking loss.
 
 ## 2.10 Corner-to-corner queries are unusable at 40 % density
 
-Independently found while preparing the artifact and recorded in
-`message-counting-note.md` §6. For uniform random obstacles at 40 %, the
+Independently found while preparing the artifact. For uniform random obstacles at 40 %, the
 free-cell fraction of 0.60 sits just above the 2-D site-percolation threshold
 p_c ≈ 0.5927, so opposite corners of a large grid are almost never connected —
 no connected corner pair in 200 draws at 75×75.

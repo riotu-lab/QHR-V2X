@@ -294,8 +294,8 @@ def _amplified_probabilities(
     "bias expansion toward more promising nodes" and collapses the plateau.
 
     Passing ``promise=None`` reproduces the f-only reading of Eqs. (9)-(11),
-    whose argmax provably coincides with A*'s choice - see
-    message-counting-note.md section 4.
+    whose argmax provably coincides with A*'s choice - see VERIFICATION.md
+    section 2.3.
     """
     f = np.asarray(f_values, dtype=float)
 
