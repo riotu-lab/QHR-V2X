@@ -103,15 +103,26 @@ format:
 	@echo "✅ Code formatted!"
 
 # Cleanup
+# Remove generated output only.
+#
+# Deliberately does NOT `rm -rf experiments/results/`: several files in there are
+# tracked (the paper figures, the comparison charts and CSVs), and a blanket
+# delete removes them from the working tree, leaving a clone looking broken until
+# someone runs `git checkout`. `git clean -Xdf` removes exactly the ignored
+# files -- which is precisely the generated set, since .gitignore already lists
+# benchmarks/results/, all_figures/, diagnostics/ and paper_reproduction/.
+# Outside a git checkout it falls back to removing those paths directly.
 clean:
 	@echo "🧹 Cleaning generated files..."
-	rm -rf experiments/results/
-	rm -rf experiments/analysis/results/
-	rm -rf benchmarks/results/
-	rm -rf __pycache__/
-	find . -name "*.pyc" -delete
-	find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
-	@echo "✅ Cleanup completed!"
+	@if git rev-parse --git-dir >/dev/null 2>&1; then \
+		git clean -Xdf -- benchmarks experiments | sed 's/^/  /'; \
+	else \
+		rm -rf benchmarks/results/ experiments/results/all_figures/ \
+		       experiments/results/diagnostics/ experiments/results/paper_reproduction/; \
+	fi
+	@find . -name "*.pyc" -delete
+	@find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+	@echo "✅ Cleanup completed (tracked files untouched)"
 
 # Development commands
 dev-setup: install
