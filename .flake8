@@ -1,0 +1,16 @@
+[flake8]
+# Match the line length black is configured with in pyproject.toml. Without
+# this, `make format` (black, 88 columns) and `make lint` (flake8, defaulting
+# to 79) disagree on every reformatted line.
+max-line-length = 88
+
+# E203 and W503 conflict with black's slicing and line-break style; both are
+# on black's documented list of checks to disable.
+extend-ignore = E203, W503
+
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    benchmarks/results,
+    experiments/results,

@@ -7,16 +7,23 @@ readme = "README.md"
 packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
-python = "3.11.5"
+# The paper's results were produced on 3.11.5. The range is kept open across
+# 3.11.x so a reproducer is not blocked by a patch-level mismatch; 3.12 is
+# excluded because the pinned qiskit 0.44 does not support it.
+python = ">=3.11,<3.12"
 numpy = "^1.24.0"
 matplotlib = "^3.7.0"
 pandas = "^2.0.0"
+# Pinned to the versions the published figures were generated with. Kept as-is
+# deliberately: the pin is part of the reproduction contract, not an oversight.
 qiskit = "^0.44.0"
 qiskit-aer = "^0.12.0"
-reportlab = "^4.0.0"
-tabulate = "^0.9.0"
 scipy = "^1.10.0"
 seaborn = "^0.12.0"
+# Never imported by name, but pandas.DataFrame.to_markdown() requires it, and
+# the harness writes markdown tables with it in tests/test_pathfinding_all.py
+# and experiments/analysis/analyze_results.py. Removing it breaks both at runtime.
+tabulate = "^0.9.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"

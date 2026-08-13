@@ -220,7 +220,7 @@ def demonstrate_basic_quantum_circuit():
     result = job.result()
     counts = result.get_counts()
     
-    print(f"✅ Results (after 1000 runs):")
+    print("✅ Results (after 1000 runs):")
     for state, count in sorted(counts.items()):
         percentage = count / 10
         print(f"   State {state}: {count} times ({percentage:.1f}%)")
@@ -234,7 +234,7 @@ if __name__ == "__main__":
         # Test basic installation
         simulator = AerSimulator()
         max_qubits = simulator.configuration().n_qubits
-        print(f"✅ Qiskit-Aer is installed and working!")
+        print("✅ Qiskit-Aer is installed and working!")
         print(f"   Available qubits: {max_qubits}")
         print()
         

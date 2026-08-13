@@ -14,7 +14,6 @@ Commands:
     quantum       Test quantum algorithms
     benchmark     Run full benchmarking (all algorithms)
     selective     Run benchmark with selected algorithms
-    selective_report  Run selective benchmark and generate comprehensive PDF report
     compare       Compare specific algorithms
     help          Show this help message
 
@@ -23,16 +22,13 @@ Examples:
     poetry run python main.py quantum                 # Test quantum algorithms
     poetry run python main.py benchmark               # Run full benchmark
     poetry run python main.py selective dijkstra astar astar_quantum  # Selective benchmark
-    poetry run python main.py selective_report dijkstra astar astar_quantum  # Selective + PDF
     poetry run python main.py compare dijkstra dijkstra_quantum       # Compare algorithms
 
-Shortcuts (via Poetry scripts):
-    poetry run bench-select dijkstra astar astar_quantum
-    poetry run report
+This CLI is for exploring the algorithms interactively. The paper's figures come
+from `make figures SEED=paper` -- see REPRODUCE.md.
 """
 
 import sys
-import os
 import argparse
 import time
 import numpy as np
@@ -158,7 +154,7 @@ def run_demo():
     
     # Show comparison
     if results:
-        print(f"\n📊 Demo Results Summary:")
+        print("\n📊 Demo Results Summary:")
         print(f"{'Algorithm':<20} {'Path Length':<12} {'Messages':<10} {'Time (ms)':<10}")
         print("-" * 55)
         for result in results:
@@ -182,7 +178,7 @@ def run_basic_test():
             results.append(result)
     
     if results:
-        print(f"\n📊 Basic Test Results:")
+        print("\n📊 Basic Test Results:")
         print(f"{'Algorithm':<20} {'Path Length':<12} {'Messages':<10} {'Time (ms)':<10}")
         print("-" * 55)
         for result in results:
@@ -208,7 +204,7 @@ def run_quantum_test():
             results.append(result)
     
     if results:
-        print(f"\n📊 Quantum Test Results:")
+        print("\n📊 Quantum Test Results:")
         print(f"{'Algorithm':<25} {'Path Length':<12} {'Messages':<10} {'Time (ms)':<10}")
         print("-" * 60)
         for result in results:
@@ -222,11 +218,11 @@ def run_benchmark():
     try:
         from tests.test_pathfinding_all import run_all
         print("Running dense mode benchmark...")
-        results_dense = run_all(mode="dense", export_csv=True, export_compiled_results=True)
+        run_all(mode="dense", export_csv=True, export_compiled_results=True)
         print("✅ Dense mode completed")
         
         print("Running sparse mode benchmark...")
-        results_sparse = run_all(mode="sparse", export_csv=True, export_compiled_results=True)
+        run_all(mode="sparse", export_csv=True, export_compiled_results=True)
         print("✅ Sparse mode completed")
         
         print("\n🎉 All benchmarks completed!")
@@ -245,7 +241,7 @@ def run_selective_benchmark(algorithms):
         
         # Run dense mode
         print("Running dense mode benchmark...")
-        results_dense = run_selected_algorithms(
+        run_selected_algorithms(
             algorithms=algorithms,
             mode="dense",
             export_csv=True,
@@ -255,7 +251,7 @@ def run_selective_benchmark(algorithms):
         
         # Run sparse mode
         print("Running sparse mode benchmark...")
-        results_sparse = run_selected_algorithms(
+        run_selected_algorithms(
             algorithms=algorithms,
             mode="sparse",
             export_csv=True,
@@ -288,7 +284,7 @@ def run_compare(algorithms):
             results.append(result)
     
     if results:
-        print(f"\n📊 Comparison Results:")
+        print("\n📊 Comparison Results:")
         print(f"{'Algorithm':<25} {'Path Length':<12} {'Messages':<10} {'Time (ms)':<10}")
         print("-" * 60)
         for result in results:
@@ -298,7 +294,7 @@ def run_compare(algorithms):
         if results:
             best_time = min(results, key=lambda x: x['time_ms'])
             best_messages = min(results, key=lambda x: x['messages'])
-            print(f"\n🏆 Best Performance:")
+            print("\n🏆 Best Performance:")
             print(f"   Fastest: {best_time['algorithm']} ({best_time['time_ms']:.3f}ms)")
             print(f"   Most Efficient: {best_messages['algorithm']} ({best_messages['messages']} messages)")
 
@@ -308,10 +304,11 @@ def show_help():
     print("\n📁 Project Structure:")
     print("   src/           - Algorithm implementations")
     print("   tests/         - Test and benchmark scripts")
-    print("   benchmarks/    - Benchmark results and outputs")
+    print("   experiments/   - Reproduction pipeline and figures")
+    print("   benchmarks/    - Benchmark results and outputs (generated)")
     print("   pyproject.toml - Poetry configuration and dependencies")
     print("   main.py        - Optional CLI entry point")
-    
+
     print("\n🔧 Available Algorithms:")
     for name, (description, _) in ALGORITHMS.items():
         print(f"   {name:<20} - {description}")
@@ -321,7 +318,6 @@ def show_help():
     print("   poetry run python main.py quantum")
     print("   poetry run python main.py benchmark")
     print("   poetry run python main.py selective dijkstra astar astar_quantum")
-    print("   poetry run python main.py selective_report dijkstra astar astar_quantum")
     print("   poetry run python main.py compare dijkstra dijkstra_quantum")
 
 def main():
@@ -336,7 +332,7 @@ def main():
         "command",
         nargs="?",
         default="help",
-        choices=["demo", "test", "quantum", "benchmark", "selective", "selective_report", "compare", "help"],
+        choices=["demo", "test", "quantum", "benchmark", "selective", "compare", "help"],
         help="Command to run"
     )
     
@@ -363,28 +359,6 @@ def main():
             print("Example: python main.py selective dijkstra astar astar_quantum")
             return
         run_selective_benchmark(args.algorithms)
-    elif args.command == "selective_report":
-        if not args.algorithms:
-            print("❌ Please specify algorithms to test")
-            print("Example: python main.py selective_report dijkstra astar astar_quantum")
-            return
-        # Run selective benchmark first
-        run_selective_benchmark(args.algorithms)
-        # Generate comprehensive PDF report (no prompt) by loading module from file path
-        try:
-            import importlib.util
-            report_path = os.path.join("benchmarks", "scripts", "generate_pdf_report_improved.py")
-            spec = importlib.util.spec_from_file_location("generate_pdf_report_improved", report_path)
-            module = importlib.util.module_from_spec(spec)
-            assert spec.loader is not None
-            spec.loader.exec_module(module)
-            if hasattr(module, "generate_comprehensive_pdf_report"):
-                module.generate_comprehensive_pdf_report()
-                print("📄 Comprehensive PDF report generated under benchmarks/reports/")
-            else:
-                print("❌ Could not find generate_comprehensive_pdf_report() in report script")
-        except Exception as e:
-            print(f"❌ Error generating PDF report: {e}")
     elif args.command == "compare":
         if len(args.algorithms) < 2:
             print("❌ Please specify at least 2 algorithms to compare")
