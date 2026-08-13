@@ -145,9 +145,9 @@ validate:
 docs:
 	@echo "📚 Documentation available:"
 	@echo "- README.md: Project overview and quick start"
-	@echo "- EXPERIMENTS.md: Detailed experimental guide"
-	@echo "- PAPER_INTEGRATION.md: Paper integration guide"
-	@echo "- CITATION.md: Citation information"
+	@echo "- REPRODUCE.md: How to reproduce the paper's figures"
+	@echo "- VERIFICATION.md: What reproduces, what does not, and why"
+	@echo "- CITATION.cff: Citation metadata"
 
 # Show repository status
 status:

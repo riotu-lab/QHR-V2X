@@ -187,10 +187,10 @@ QHR-V2X/
 ├── 📄 main.py                        # 🚀 Main project entry point
 ├── 📄 Makefile                       # 🛠️ Automation commands
 ├── 📄 setup.sh                       # 🔧 Installation script
-├── 📄 CITATION.md                    # 📖 Academic citation info
+├── 📄 CITATION.cff                   # 📖 Citation metadata
 ├── 📄 LICENSE                        # ⚖️ MIT License
-├── 📄 EXPERIMENTS.md                 # 🔬 Research reproduction guide
-├── 📄 PAPER_INTEGRATION.md           # 📄 Paper integration guide
+├── 📄 REPRODUCE.md                   # 🔬 How to reproduce the figures
+├── 📄 VERIFICATION.md                # 🔍 What reproduces, and what does not
 ├── 📄 pyproject.toml                 # 📦 Poetry dependencies
 ├── 📄 poetry.lock                    # 🔒 Locked dependency versions
 └── 📄 README.md                      # 📚 This file
@@ -298,7 +298,6 @@ S . . . . . . . G    S = Start point
 
 **New to quantum computing or qiskit-aer?** We've created comprehensive guides:
 
-- **[QISKIT_AER_COMPLETE_GUIDE.md](QISKIT_AER_COMPLETE_GUIDE.md)** - Guide with explanations, examples, and troubleshooting
 - **[examples/qiskit_aer_example.py](examples/qiskit_aer_example.py)** - Runnable example demonstrating quantum pathfinding
 
 **Quick Installation:**
@@ -437,3 +436,21 @@ This appears to be academic/research work. Please check with the original author
 
 ## 🐍 **Python Version Requirement**
 **This project requires Python 3.11.5** for optimal performance and modern features.
+
+## Citation
+
+```bibtex
+@article{khan2026qhrv2x,
+  title   = {{QHR-V2X}: A Quantum-Heuristic Routing Framework for Efficient {V2X} Path Discovery},
+  author  = {Khan, Zahid and Almogbil, Sultan Hamad and Babar, Muhammad and Ammar, Adel and Boulila, Wadii},
+  journal = {IEEE Open Journal of the Communications Society},
+  volume  = {7},
+  pages   = {211--220},
+  year    = {2026},
+  doi     = {10.1109/OJCOMS.2025.3644144},
+  issn    = {2644-125X}
+}
+```
+
+Machine-readable metadata is in [`CITATION.cff`](CITATION.cff); GitHub renders it
+as "Cite this repository".

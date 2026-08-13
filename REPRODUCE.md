@@ -14,6 +14,14 @@ repository is drawn from stored numbers.
 poetry install          # Python 3.11, NumPy, Matplotlib, pandas, Qiskit, qiskit-aer
 ```
 
+Python 3.11.5, and 8 GB RAM is comfortable for the 100×100 grids. A full run of
+both topologies takes a few minutes; `make figures-all` a little longer.
+
+If `poetry install` leaves something missing, `poetry install --sync` reinstalls
+from the lockfile. If Qiskit is unavailable the amplification falls back to the
+classical selection — `qhr_v2x(..., use_quantum=True)` is the only path that
+requires `qiskit-aer`, and it is off by default.
+
 ## 2. Reproduce the paper's figures
 
 ```bash

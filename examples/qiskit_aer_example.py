@@ -249,8 +249,7 @@ if __name__ == "__main__":
         print("=" * 60)
         print()
         print("Next steps:")
-        print("  - Read QISKIT_AER_GUIDE.md for detailed documentation")
-        print("  - Check QISKIT_AER_QUICKSTART.md for quick reference")
+        print("  - Read REPRODUCE.md to regenerate the paper's figures")
         print("  - Explore the src/ directory for more pathfinding examples")
         
     except ImportError as e:
