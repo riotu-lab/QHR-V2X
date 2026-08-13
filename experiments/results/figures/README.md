@@ -39,6 +39,21 @@ largest component, which keeps every instance solvable without lowering the dens
 | `Supp_solvability_vs_density.png` | Fraction of random grids with a corner-to-corner route, by density |
 | `Supp_summary_*.png` | All metrics for one density in a single panel |
 
+## Regenerating
+
+Re-running the command above reproduces 15 of the 17 charts byte-identically, and
+every deterministic column of the CSVs. Three files legitimately change:
+
+| File | Why |
+| --- | --- |
+| `Supp_measured_time_dense.png`, `Supp_measured_time_sparse.png` | plot measured wall-clock time |
+| `../comparison_*.csv` (`wall_ms` column only) | measured wall-clock time |
+| `../comparison_summary.md` | quotes those timings |
+
+Wall-clock is machine-dependent, so it differs between any two computers. Message
+counts, expansions and path lengths are seeded and identical everywhere. If those
+change, something is genuinely wrong; a `wall_ms` diff is expected.
+
 Underlying measurements: [`../comparison_dense.csv`](../comparison_dense.csv),
 [`../comparison_sparse.csv`](../comparison_sparse.csv),
 [`../comparison_summary.md`](../comparison_summary.md).
