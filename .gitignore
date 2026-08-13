@@ -94,3 +94,7 @@ experiments/analysis/results/
 # The published PDF, kept locally for reference. Redistribution is the
 # publisher's call, so it is not committed by default.
 *.pdf
+
+# Local agent tooling. Not committed by default -- see .claude/skills/ if you
+# want the artifact-consistency audit shared with collaborators.
+.claude/
