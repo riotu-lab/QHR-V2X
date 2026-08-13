@@ -68,23 +68,29 @@ dmypy.json
 *.tar.gz
 *.rar
 # ---------------------------------------------------------------------------
-# Generated benchmark output.
+# Generated output.
 #
-# `make figures` rebuilds all of this from the algorithms on every run, so
-# tracking it only produces churn. The canonical figure set that the paper
-# links to is kept under experiments/results/paper_figures/ and is regenerated
-# deliberately (see REPRODUCE.md), not on every local run.
+# No figure is committed. Every chart in this project is produced by running the
+# algorithms, so shipping images would only ever duplicate what two `make`
+# targets rebuild:
+#
+#   make figures SEED=paper   the paper's Figures 3-8, into paper_figures/
+#   make figures-nominal      the 20-seed Table 1 run, into figures/
+#
+# The measured CSVs under experiments/results/ *are* committed: they are small,
+# text, diffable, and they are the evidence behind the numbers quoted in
+# VERIFICATION.md. REPRODUCE.md section 7 states the policy per directory.
 # ---------------------------------------------------------------------------
 benchmarks/results/
 experiments/results/all_figures/
 experiments/results/diagnostics/
 experiments/results/paper_reproduction/
-experiments/results/paper_figures/*_curved.png
-experiments/results/paper_figures/*_hops.png
+experiments/results/figures/
+experiments/results/paper_figures/
 
-# Scratch files kept out of the published artifact
-guide.html
-style.css
-output.pdf
-image.png
-image copy.png
+# Rebuilt in seconds by `make analyze`.
+experiments/analysis/results/
+
+# The published PDF, kept locally for reference. Redistribution is the
+# publisher's call, so it is not committed by default.
+*.pdf
