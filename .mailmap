@@ -1,0 +1,14 @@
+# Canonical author identity.
+#
+# The project's commits were authored under three name/email pairs by the same
+# person. This maps them onto one, spelled as in CITATION.cff, so `git log`,
+# `git shortlog -sne` and anything built on them report a single contributor.
+# No commit is rewritten -- the stored author fields are untouched, and every
+# SHA stays valid for the published artifact.
+#
+# Format: <canonical name> <canonical email> [<replaced email>]
+# The first line has no replacement address, so it canonicalises the name on
+# every commit already using that email.
+
+Sultan Hamad Almogbil <sultan@programmer.net>
+Sultan Hamad Almogbil <sultan@programmer.net> <46461292+sultan12100@users.noreply.github.com>
