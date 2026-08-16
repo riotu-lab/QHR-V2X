@@ -5,7 +5,7 @@
 # research results and managing the academic codebase.
 
 .PHONY: help install test clean reproduce analyze figures figures-all all \
-        figures-nominal lint format dev-setup validate docs status
+        figures-nominal lint format dev-setup validate docs status audit
 
 # How every target below invokes Python.
 #
@@ -51,6 +51,7 @@ help:
 	@echo "  make clean       - Clean generated files"
 	@echo "  make lint        - Run code linting"
 	@echo "  make format      - Format code"
+	@echo "  make audit       - Check the docs still match the code"
 	@echo ""
 
 # Installation
@@ -144,6 +145,14 @@ format:
 	@echo "🎨 Formatting code..."
 	$(PY) -m black src/ tests/ experiments/
 	@echo "✅ Code formatted!"
+
+# Verify the documentation's checkable claims against the repository: that code
+# citations resolve, that every `make` target named in a doc exists, that links
+# resolve, and that the tracked-file policy still matches reality. Run it before
+# committing changes to README.md, REPRODUCE.md or VERIFICATION.md. Needs no
+# Python, so it works before `make install`.
+audit:
+	@bash scripts/audit.sh
 
 # Cleanup
 # Remove generated output only.

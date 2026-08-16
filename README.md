@@ -119,9 +119,14 @@ experiments/scripts/        reproduce_paper_results.py  — runs the benchmark
                             generate_comparison_charts.py — the 20-seed run
 experiments/analysis/       figure generation and statistical analysis
 experiments/results/        measured CSVs, and generated figures (see REPRODUCE.md §7)
+scripts/audit.sh            checks the docs still match the code (`make audit`)
 REPRODUCE.md                how to reproduce the figures, and the two figure sets
 VERIFICATION.md             what reproduces, what does not, and the evidence
 ```
+
+The docs here make checkable claims — code line numbers, make targets, which
+files ship — and those drift as the code changes. `make audit` verifies them and
+exits non-zero on a stale one; run it before committing documentation changes.
 
 **No figure is committed** — every chart is drawn from a live run, so `make
 figures SEED=paper` and `make figures-nominal` produce them on demand. What *is*
