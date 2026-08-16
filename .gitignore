@@ -95,6 +95,14 @@ experiments/analysis/results/
 # publisher's call, so it is not committed by default.
 *.pdf
 
+# Scratch files at the repo root: pasted screenshots of the paper, pandoc
+# renders of notes, and similar one-off working files. Anchored with a leading
+# slash so only the root is ignored -- the generated figures further down the
+# tree are already covered by the directory rules above.
+/*.png
+/*.html
+/*.css
+
 # Local agent tooling. Not committed by default -- see .claude/skills/ if you
 # want the artifact-consistency audit shared with collaborators.
 .claude/
